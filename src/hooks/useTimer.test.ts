@@ -1,15 +1,19 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useTimer } from "./useTimer";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
 describe("useTimer", () => {
-  it("initializes with null status", () => {
-    // Mock invoke to return null to prevent race condition
+  beforeEach(() => {
+    // Reset mocks to default implementation before each test
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation(() => Promise.resolve(null));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (listen as any).mockImplementation(() => Promise.resolve(() => {}));
+  });
 
+  it("initializes with null status", () => {
     const { result } = renderHook(() => useTimer());
     expect(result.current).toBeNull();
   });
