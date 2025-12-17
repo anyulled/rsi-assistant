@@ -53,7 +53,7 @@ describe("useTimer", () => {
       if (event === "timer-update") {
         eventHandler = handler;
       }
-      return Promise.resolve(() => { });
+      return Promise.resolve(() => {});
     });
 
     renderHook(() => useTimer());
