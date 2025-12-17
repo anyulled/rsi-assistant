@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----- Node setup -----
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run frontend tests
+        run: npm test
+
+      - name: Lint frontend
+        run: npx eslint . --ext .js,.ts,.tsx
+
+      # ----- Rust setup -----
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - name: Build Rust backend
+        run: cargo build --release
+
+      - name: Run Rust tests
+        run: cargo test --release
+
+      - name: Lint Rust code (clippy)
+        run: cargo clippy -- -D warnings

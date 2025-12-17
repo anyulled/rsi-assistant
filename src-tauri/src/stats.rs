@@ -66,18 +66,10 @@ impl Default for DailyStats {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct StatsStore {
     pub stats: HashMap<String, DailyStats>, // Key: date (YYYY-MM-DD)
-}
-
-impl Default for StatsStore {
-    fn default() -> Self {
-        Self {
-            stats: HashMap::new(),
-        }
-    }
 }
 
 impl StatsStore {

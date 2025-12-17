@@ -107,10 +107,11 @@ impl TimerService {
             }
 
             // Check if rest break should be cleared
-            if self.config.rest_enabled && self.current_idle >= self.config.rest_duration {
-                if self.rest_active > 0 {
-                    self.rest_active = 0;
-                }
+            if self.config.rest_enabled
+                && self.current_idle >= self.config.rest_duration
+                && self.rest_active > 0
+            {
+                self.rest_active = 0;
             }
         } else {
             // User Active
