@@ -5,9 +5,6 @@ import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 
 describe('useTimer', () => {
-    beforeEach(() => {
-        mock.restore();
-    });
 
     it('initializes with null status', () => {
         const { result } = renderHook(() => useTimer());
