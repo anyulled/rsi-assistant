@@ -9,6 +9,7 @@ bun x eslint . --ext .js,.ts,.tsx --fix
 
 # Run Prettier check
 echo "Running Prettier..."
+bun run format
 bun run format:check
 
 # Check Rust formatting

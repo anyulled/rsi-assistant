@@ -6,6 +6,10 @@ import { invoke } from "@tauri-apps/api/core";
 
 describe("useTimer", () => {
   it("initializes with null status", () => {
+    // Mock invoke to return null to prevent race condition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (invoke as any).mockImplementation(() => Promise.resolve(null));
+
     const { result } = renderHook(() => useTimer());
     expect(result.current).toBeNull();
   });
@@ -49,7 +53,7 @@ describe("useTimer", () => {
       if (event === "timer-update") {
         eventHandler = handler;
       }
-      return Promise.resolve(() => {});
+      return Promise.resolve(() => { });
     });
 
     renderHook(() => useTimer());
