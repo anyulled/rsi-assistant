@@ -47,8 +47,6 @@ function App() {
     return <BreakOverlay />;
   }
 
-
-
   return (
     <main className="container h-screen mx-auto p-4 select-none">
       {/* App Header */}
