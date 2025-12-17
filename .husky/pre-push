@@ -1,0 +1,38 @@
+# Set up PATH for git hooks
+export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+
+echo "🚀 Running pre-push checks..."
+
+# Build frontend
+echo "Building frontend..."
+bun run build
+if [ $? -ne 0 ]; then
+  echo "❌ Frontend build failed!"
+  exit 1
+fi
+
+# Run frontend tests
+echo "Running frontend tests..."
+bun run test
+if [ $? -ne 0 ]; then
+  echo "❌ Frontend tests failed!"
+  exit 1
+fi
+
+# Build Rust backend
+echo "Building Rust backend..."
+cd src-tauri && cargo build --release
+if [ $? -ne 0 ]; then
+  echo "❌ Rust build failed!"
+  exit 1
+fi
+
+# Run clippy
+echo "Running clippy..."
+cargo clippy --release -- -D warnings
+if [ $? -ne 0 ]; then
+  echo "❌ Clippy found issues!"
+  exit 1
+fi
+
+echo "✅ Pre-push checks passed!"

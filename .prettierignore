@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+bun.lock
+
+# Build outputs
+dist
+build
+.tauri
+target
+
+# Generated files
+gen
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode
+.idea

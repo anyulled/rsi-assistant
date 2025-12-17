@@ -36,17 +36,11 @@ impl DeviceQueryIdleDetector {
             }
         });
 
-        Self {
-            last_activity,
-            _polling_thread: Some(thread_handle),
-        }
+        Self { last_activity, _polling_thread: Some(thread_handle) }
     }
 
     fn now() -> u64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
     }
 }
 
@@ -73,9 +67,7 @@ mod tests {
 
     #[test]
     fn test_mock_implementation() {
-        let mock = MockIdleDetector {
-            last_input_secs_ago: 100,
-        };
+        let mock = MockIdleDetector { last_input_secs_ago: 100 };
         assert_eq!(mock.get_seconds_since_last_input(), 100);
     }
 

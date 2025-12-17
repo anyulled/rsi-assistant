@@ -1,15 +1,15 @@
 mod commands;
 mod idle;
-mod timer;
 mod stats;
+mod timer;
 
 use crate::commands::AppState;
 use crate::idle::DeviceQueryIdleDetector;
-use crate::timer::{BreakConfig, TimerService};
 use crate::stats::StatsStore;
+use crate::timer::{BreakConfig, TimerService};
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::menu::{Menu, MenuItem, Submenu, PredefinedMenuItem};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager};
 use tokio::time::sleep;
@@ -44,23 +44,23 @@ pub fn run() {
             let rest_break_i = MenuItem::with_id(app, "rest_break", "Take Rest Break Now", true, None::<&str>)?;
             let exercises_i = MenuItem::with_id(app, "exercises", "Exercises", true, None::<&str>)?;
             let statistics_i = MenuItem::with_id(app, "statistics", "Statistics", true, None::<&str>)?;
-            
+
             // Operation Mode submenu
             // Default to Normal being checked
             let mode_normal_i = CheckMenuItem::with_id(app, "mode_normal", "Normal", true, true, None::<&str>)?;
             let mode_quiet_i = CheckMenuItem::with_id(app, "mode_quiet", "Quiet", true, false, None::<&str>)?;
             let mode_suspended_i = CheckMenuItem::with_id(app, "mode_suspended", "Suspended", true, false, None::<&str>)?;
-            
+
             let mode_submenu = Submenu::with_items(app, "Mode", true, &[
                 &mode_normal_i,
                 &mode_quiet_i,
                 &mode_suspended_i,
             ])?;
-            
+
             let preferences_i = MenuItem::with_id(app, "preferences", "Preferences", true, None::<&str>)?;
             let about_i = MenuItem::with_id(app, "about", "About", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            
+
             let menu = Menu::with_items(app, &[
                 &show_i,
                 &PredefinedMenuItem::separator(app)?,
@@ -86,7 +86,7 @@ pub fn run() {
                 .show_menu_on_left_click(true)
                 .on_menu_event(move |app, event| {
                     let window = app.get_webview_window("main");
-                    
+
                     match event.id.as_ref() {
                         "quit" => {
                             app.exit(0);
@@ -134,7 +134,7 @@ pub fn run() {
                              let state = app.state::<AppState>();
                              let mut service = state.timer_service.lock().unwrap();
                              service.set_mode(timer::OperationMode::Normal);
-                             
+
                              let _ = mode_normal_handle.set_checked(true);
                              let _ = mode_quiet_handle.set_checked(false);
                              let _ = mode_suspended_handle.set_checked(false);
@@ -164,7 +164,7 @@ pub fn run() {
 
             // Clone handle for background task
             let handle = app.handle().clone();
-            
+
 use tauri_plugin_notification::NotificationExt;
 
 // ... imports ...
@@ -174,30 +174,30 @@ use tauri_plugin_notification::NotificationExt;
             // Spawn background task
             tauri::async_runtime::spawn(async move {
                 use crate::idle::IdleDetector;
-                
+
                 let mut was_micro_overdue = false;
                 let mut was_rest_overdue = false;
 
                 loop {
                     sleep(Duration::from_secs(1)).await;
-                    
+
                     let idle_seconds = idle_detector.get_seconds_since_last_input();
                     let is_idle = idle_seconds > 5; // Simple threshold
-                    
+
                     let status = {
                         let state = handle.state::<AppState>();
                         let mut service = state.timer_service.lock().unwrap();
                         service.tick(is_idle);
                         let status = service.get_status();
-                        
+
                         // Update statistics with current usage
                         let mut stats = state.stats_store.lock().unwrap();
                         let today = stats.get_or_create_today();
                         today.total_usage_seconds = status.daily_usage;
-                        
+
                         status
                     };
-                    
+
                     // Notifications
                     if status.micro_is_overdue && !was_micro_overdue {
                         let _ = handle.notification().builder()

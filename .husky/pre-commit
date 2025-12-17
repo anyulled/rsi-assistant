@@ -1,0 +1,22 @@
+# Set up PATH for git hooks
+export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+
+echo "🔍 Running pre-commit checks..."
+
+# Run ESLint with auto-fix on staged files
+echo "Running ESLint..."
+bun x eslint . --ext .js,.ts,.tsx --fix
+
+# Run Prettier check
+echo "Running Prettier..."
+bun run format:check
+
+# Check Rust formatting
+echo "Checking Rust formatting..."
+cd src-tauri && cargo fmt --check
+if [ $? -ne 0 ]; then
+  echo "❌ Rust code is not formatted. Run 'cargo fmt' in src-tauri directory."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"

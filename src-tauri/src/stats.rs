@@ -77,20 +77,13 @@ impl StatsStore {
         let today = chrono::Local::now().format("%Y-%m-%d").to_string();
         self.stats
             .entry(today.clone())
-            .or_insert_with(|| DailyStats {
-                date: today,
-                ..Default::default()
-            })
+            .or_insert_with(|| DailyStats { date: today, ..Default::default() })
     }
 
     pub fn get_last_n_days(&self, n: usize) -> Vec<DailyStats> {
         let mut dates: Vec<_> = self.stats.keys().collect();
         dates.sort_by(|a, b| b.cmp(a)); // Sort descending (newest first)
-        dates
-            .into_iter()
-            .take(n)
-            .filter_map(|date| self.stats.get(date).cloned())
-            .collect()
+        dates.into_iter().take(n).filter_map(|date| self.stats.get(date).cloned()).collect()
     }
 }
 

@@ -77,13 +77,7 @@ pub struct TimerService {
 
 impl TimerService {
     pub fn new(config: BreakConfig) -> Self {
-        Self {
-            config,
-            daily_usage: 0,
-            micro_active: 0,
-            rest_active: 0,
-            current_idle: 0,
-        }
+        Self { config, daily_usage: 0, micro_active: 0, rest_active: 0, current_idle: 0 }
     }
 
     pub fn tick(&mut self, is_idle: bool) {

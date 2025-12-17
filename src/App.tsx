@@ -19,10 +19,11 @@ function App() {
   useEffect(() => {
     // Check if we are in the overlay window
     try {
-      if (getCurrentWindow().label === 'overlay') {
+      if (getCurrentWindow().label === "overlay") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsOverlay(true);
       }
-    } catch (e) {
+    } catch {
       console.log("Not running in Tauri window or failed to get label");
     }
 
@@ -30,7 +31,7 @@ function App() {
     let unlisten: () => void;
 
     async function setupListener() {
-      unlisten = await listen<string>('navigate-to', (event) => {
+      unlisten = await listen<string>("navigate-to", (event) => {
         const targetView = event.payload as "timer" | "settings" | "exercises" | "statistics";
         setView(targetView);
       });
@@ -57,12 +58,13 @@ function App() {
           className="w-12 h-12"
           onError={(e) => {
             // Fallback if icon not found
-            e.currentTarget.style.display = 'none';
+            e.currentTarget.style.display = "none";
           }}
         />
         <h1 className="text-2xl font-bold text-foreground">RSI Recovery Assistant</h1>
       </div>
 
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <Tabs value={view} onValueChange={(v) => setView(v as any)} className="h-full flex flex-col">
         <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="timer">Timer</TabsTrigger>
@@ -81,7 +83,6 @@ function App() {
             </div>
           )}
         </TabsContent>
-
 
         <TabsContent value="exercises">
           <Exercises />
