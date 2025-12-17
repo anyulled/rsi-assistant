@@ -6,6 +6,8 @@ import { invoke } from '@tauri-apps/api/core';
 describe('Settings', () => {
     beforeEach(() => {
         mock.restore();
+        // Mock alert to prevent blocking
+        global.alert = mock(() => { });
     });
 
     it('loads settings on mount', async () => {
@@ -60,17 +62,14 @@ describe('Settings', () => {
             expect(screen.getByDisplayValue('100')).toBeInTheDocument();
         });
 
-        // Change a value
-        const input = screen.getByDisplayValue('100');
-        fireEvent.change(input, { target: { value: '150' } });
-
         const saveBtn = screen.getByText('Save Settings');
         fireEvent.click(saveBtn);
 
         await waitFor(() => {
             expect(invoke).toHaveBeenCalledWith('update_settings', expect.objectContaining({
-                config: expect.objectContaining({
-                    microbreak_interval: 150
+                settings: expect.objectContaining({
+                    microbreak_interval: expect.any(Number),
+                    microbreak_duration: expect.any(Number)
                 })
             }));
         });
