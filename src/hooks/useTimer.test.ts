@@ -10,7 +10,7 @@ describe.skip("useTimer", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation(() => Promise.resolve(null));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (listen as any).mockImplementation(() => Promise.resolve(() => { }));
+    (listen as any).mockImplementation(() => Promise.resolve(() => {}));
   });
 
   it("initializes with null status", () => {
@@ -57,7 +57,7 @@ describe.skip("useTimer", () => {
       if (event === "timer-update") {
         eventHandler = handler;
       }
-      return Promise.resolve(() => { });
+      return Promise.resolve(() => {});
     });
 
     renderHook(() => useTimer());
