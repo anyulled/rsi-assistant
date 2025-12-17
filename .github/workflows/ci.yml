@@ -30,39 +30,7 @@ jobs:
       - name: Lint frontend
         run: bunx eslint . --ext .js,.ts,.tsx
 
-  rust-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Build Rust backend
-        run: cargo build --release
-        working-directory: src-tauri
-
-  rust-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Run Rust tests
-        run: cargo test --release
-        working-directory: src-tauri
-
-  rust-lint:
+  rust:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -74,6 +42,14 @@ jobs:
           toolchain: stable
           override: true
           components: clippy
+
+      - name: Build Rust backend
+        run: cargo build --release
+        working-directory: src-tauri
+
+      - name: Run Rust tests
+        run: cargo test --release
+        working-directory: src-tauri
 
       - name: Lint Rust code (clippy)
         run: cargo clippy --release -- -D warnings
