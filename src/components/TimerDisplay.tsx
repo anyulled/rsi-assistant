@@ -78,14 +78,14 @@ export function TimerDisplay({ status }: { status: TimerStatus }) {
         </div>
         <button
           onClick={() => handleTakeBreak("micro")}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-100 text-sm font-medium hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 text-sm font-medium hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
         >
           <Hand className="w-4 h-4" />
           Take Micro-break
         </button>
         <button
           onClick={() => handleTakeBreak("rest")}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-100 text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
         >
           <Coffee className="w-4 h-4" />
           Take Rest Break
