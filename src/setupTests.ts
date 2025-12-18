@@ -29,8 +29,27 @@ mock.module("@tauri-apps/api/window", () => ({
 }));
 
 mock.module("@tauri-apps/api/event", () => ({
-  listen: mock(() => Promise.resolve(() => {})),
+  listen: mock(() => Promise.resolve(() => { })),
   emit: mock(() => Promise.resolve()),
+}));
+
+// Mock Tauri Store plugin
+const mockStoreData: Record<string, unknown> = {};
+mock.module("@tauri-apps/plugin-store", () => ({
+  load: mock(() =>
+    Promise.resolve({
+      get: mock((key: string) => Promise.resolve(mockStoreData[key])),
+      set: mock((key: string, value: unknown) => {
+        mockStoreData[key] = value;
+        return Promise.resolve();
+      }),
+      save: mock(() => Promise.resolve()),
+      delete: mock((key: string) => {
+        delete mockStoreData[key];
+        return Promise.resolve();
+      }),
+    })
+  ),
 }));
 
 afterEach(() => {

@@ -143,6 +143,11 @@ impl TimerService {
         self.rest_active = self.config.rest_interval + 1;
     }
 
+    pub fn trigger_microbreak(&mut self) {
+        // Set active time just above the interval to trigger 'overdue' logic
+        self.micro_active = self.config.microbreak_interval + 1;
+    }
+
     pub fn get_status(&self) -> TimerStatus {
         TimerStatus {
             daily_usage: self.daily_usage,
@@ -263,6 +268,16 @@ mod tests {
 
         service.trigger_rest_break();
         assert!(service.rest_active > service.config.rest_interval);
+    }
+
+    #[test]
+    fn test_trigger_microbreak() {
+        let mut config = BreakConfig::default();
+        config.microbreak_interval = 100;
+        let mut service = TimerService::new(config);
+
+        service.trigger_microbreak();
+        assert!(service.micro_active > service.config.microbreak_interval);
     }
 
     #[test]

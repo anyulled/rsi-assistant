@@ -51,7 +51,7 @@ describe("App", () => {
     // Wait for useTimer to fetch state
     await waitFor(() => {
       expect(screen.getByRole("tab", { name: "Timer" })).toBeInTheDocument();
-      expect(screen.getByText(/Micro-break/)).toBeInTheDocument();
+      expect(screen.getByText(/Mode:/)).toBeInTheDocument();
     });
   });
 

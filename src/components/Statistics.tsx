@@ -100,12 +100,12 @@ export const Statistics: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-row h-[500px] w-full gap-4 p-4 bg-background text-foreground select-none">
+    <div className="flex flex-row h-[500px] w-full gap-4 p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white select-none">
       {/* Left Panel: Browse History */}
       <div className="w-[320px] flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Browse history</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Browse history</h2>
 
-        <div className="bg-card rounded-md border shadow-sm p-2">
+        <div className="bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm p-2">
           <Calendar onChange={(d) => setDate(d as Date)} value={date} className="w-full text-sm border-0" />
         </div>
 
@@ -121,8 +121,8 @@ export const Statistics: React.FC = () => {
 
       {/* Right Panel: Statistics */}
       <div className="flex-1 flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Statistics</h2>
-        <div className="text-sm text-muted-foreground mb-2">Date: {format(date, "MM/dd/yyyy")}</div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Statistics</h2>
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Date: {format(date, "MM/dd/yyyy")}</div>
 
         <Tabs defaultValue="breaks" className="w-full h-full flex flex-col">
           <TabsList className="w-fit mb-2">
@@ -133,7 +133,7 @@ export const Statistics: React.FC = () => {
           <TabsContent value="breaks" className="flex-1">
             <Card className="h-full overflow-hidden border rounded-md">
               <table className="w-full text-sm text-left">
-                <thead className="bg-muted/50 text-muted-foreground font-medium border-b">
+                <thead className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-gray-700">
                   <tr>
                     <th className="p-3 font-normal w-1/3"></th>
                     <th className="p-3 font-normal text-center">✋ Micro-break</th>
@@ -190,7 +190,7 @@ export const Statistics: React.FC = () => {
               <div className="mt-auto border-t">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-muted-foreground border-b text-xs uppercase">
+                    <tr className="text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 text-xs uppercase">
                       <th className="p-2 w-1/3"></th>
                       <th className="p-2 text-center">Daily</th>
                       <th className="p-2 text-center">Weekly</th>
@@ -211,7 +211,7 @@ export const Statistics: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="activity">
-            <div className="flex items-center justify-center h-full text-muted-foreground border rounded-md bg-muted/10">
+            <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800/50">
               <AlertCircle className="w-4 h-4 mr-2" />
               Activity timeline coming soon
             </div>

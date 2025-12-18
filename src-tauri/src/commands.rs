@@ -19,9 +19,7 @@ pub fn get_timer_state(state: State<AppState>) -> TimerStatus {
 pub fn update_settings(state: State<AppState>, settings: BreakConfig) -> Result<(), String> {
     let mut service = state.timer_service.lock().unwrap();
     service.update_config(settings);
-    // TODO: persist settings using store? Or let frontend handle store and just push here?
-    // Implementation Plan says "Two-way binding with Tauri Store via Tauri commands."
-    // For now, update in memory.
+    // Settings persistence is handled by the frontend interfacing with Tauri Store.
     Ok(())
 }
 
@@ -80,13 +78,41 @@ pub fn reset_break(state: State<AppState>, break_type: String) -> Result<(), Str
     Ok(())
 }
 
+#[tauri::command]
+pub fn set_mode(state: State<AppState>, mode: String) -> Result<(), String> {
+    let mut service = state.timer_service.lock().unwrap();
+
+    let operation_mode = match mode.as_str() {
+        "Normal" => crate::timer::OperationMode::Normal,
+        "Quiet" => crate::timer::OperationMode::Quiet,
+        "Suspended" => crate::timer::OperationMode::Suspended,
+        _ => return Err("Invalid mode".to_string()),
+    };
+
+    service.set_mode(operation_mode);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn trigger_break(state: State<AppState>, break_type: String) -> Result<(), String> {
+    let mut service = state.timer_service.lock().unwrap();
+
+    match break_type.as_str() {
+        "micro" => service.trigger_microbreak(),
+        "rest" => service.trigger_rest_break(),
+        _ => return Err("Invalid break type".to_string()),
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_timer_service_operations() {
-        let mut service = crate::timer::TimerService::new(BreakConfig::default());
+        let service = crate::timer::TimerService::new(BreakConfig::default());
         let status = service.get_status();
 
         assert_eq!(status.daily_usage, 0);

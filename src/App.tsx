@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTimer } from "./hooks/useTimer";
+import { useSettingsSync } from "./hooks/useSettingsSync";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { Settings } from "./pages/Settings";
 import { BreakOverlay } from "./pages/BreakOverlay";
@@ -12,6 +13,7 @@ import { Statistics } from "./components/Statistics";
 import "./App.css";
 
 function App() {
+  useSettingsSync();
   const timerStatus = useTimer();
   const [view, setView] = useState<"timer" | "settings" | "exercises" | "statistics">("timer");
   const [isOverlay, setIsOverlay] = useState(false);
@@ -49,11 +51,11 @@ function App() {
   }
 
   return (
-    <main className="container h-screen mx-auto p-4 select-none">
+    <main className="container max-h-screen overflow-hidden mx-auto p-4 select-none flex flex-col bg-background dark:bg-gray-900">
       {/* App Header */}
       <div className="flex items-center gap-3 mb-6">
         <img
-          src="/icons/128x128.png"
+          src="/public/banner.jpeg"
           alt="RSI Assistant"
           className="w-12 h-12"
           onError={(e) => {
@@ -61,11 +63,11 @@ function App() {
             e.currentTarget.style.display = "none";
           }}
         />
-        <h1 className="text-2xl font-bold text-foreground">RSI Recovery Assistant</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">RSI Recovery Assistant</h1>
       </div>
 
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <Tabs value={view} onValueChange={(v) => setView(v as any)} className="h-full flex flex-col">
+      <Tabs value={view} onValueChange={(v) => setView(v as any)} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="timer">Timer</TabsTrigger>
           <TabsTrigger value="exercises">Exercises</TabsTrigger>
@@ -79,7 +81,7 @@ function App() {
             <TimerDisplay status={timerStatus} />
           ) : (
             <div className="flex items-center justify-center h-64">
-              <span className="text-muted-foreground">Loading timer...</span>
+              <span className="text-gray-600 dark:text-gray-400">Loading timer...</span>
             </div>
           )}
         </TabsContent>

@@ -1,45 +1,66 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { useTimer } from "@/hooks/useTimer";
+import type { BreakConfig } from "@/types";
 
 export function BreakOverlay() {
   const status = useTimer();
-  const [message, setMessage] = useState("Time for a break!");
   const [breakDuration, setBreakDuration] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [breakType, setBreakType] = useState<"micro" | "rest" | null>(null);
+  const [settings, setSettings] = useState<BreakConfig | null>(null);
   const submittedRef = useRef(false);
 
+  // Fetch settings on mount to get actual break durations
   useEffect(() => {
-    if (status) {
-      if (status.micro_is_overdue) {
-        setMessage("Microbreak Time!");
+    invoke<BreakConfig>("get_settings")
+      .then((config) => {
+        setSettings(config);
+      })
+      .catch((error) => {
+        console.error("Failed to load settings:", error);
+      });
+  }, []);
 
-        setBreakType("micro");
-        // Only set duration if not already set (to avoid resetting on every tick)
-
-        setBreakDuration((prev) => (prev === 0 ? 20 : prev));
-      } else if (status.rest_is_overdue) {
-        setMessage("Rest Break Time!");
-
-        setBreakType("rest");
-
-        setBreakDuration((prev) => (prev === 0 ? 300 : prev));
-      } else {
-        // Reset state when no break is required
-        // This ensures the overlay is ready for the next break
-
-        setBreakDuration(0);
-
-        setElapsedTime(0);
-
-        setBreakType(null);
-        submittedRef.current = false;
-      }
+  // Compute break type and message from status (derived state, no need for useState)
+  const { breakType, message, targetDuration } = (() => {
+    if (!status) return { breakType: null, message: "Time for a break!", targetDuration: 0 };
+    if (status.micro_is_overdue && !status.rest_is_overdue) {
+      return {
+        breakType: "micro" as const,
+        message: "Microbreak Time!",
+        targetDuration: settings?.microbreak_duration || 20,
+      };
     }
-  }, [status]);
+    if (status.rest_is_overdue) {
+      return {
+        breakType: "rest" as const,
+        message: "Rest Break Time!",
+        targetDuration: settings?.rest_duration || 300,
+      };
+    }
+    return { breakType: null, message: "Time for a break!", targetDuration: 0 };
+  })();
+
+  // Track whether a break is active and its locked-in duration
+  const prevBreakTypeRef = useRef<"micro" | "rest" | null>(null);
+
+  // Handle break transitions: lock in duration when break starts, reset when break ends
+  // This is an intentional effect to synchronize internal state when external status transitions
+  useEffect(() => {
+    if (breakType && !prevBreakTypeRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBreakDuration(targetDuration);
+      setElapsedTime(0);
+      submittedRef.current = false;
+    } else if (!breakType && prevBreakTypeRef.current) {
+      setBreakDuration(0);
+      setElapsedTime(0);
+      submittedRef.current = false;
+    }
+    prevBreakTypeRef.current = breakType;
+  }, [breakType, targetDuration]);
 
   // Track elapsed time during break
   useEffect(() => {
@@ -49,18 +70,10 @@ export function BreakOverlay() {
     const interval = setInterval(() => {
       setElapsedTime((prev) => {
         const next = prev + 1;
-
-        // Auto-complete break when duration is reached
+        // Cap at break duration
         if (next >= breakDuration) {
-          // We need to call the function but we can't easily access
-          // the latest 'breakType' state here inside the closure without ref or dependency.
-          // But 'breakType' shouldn't change during a break.
-
-          // Trigger completion
-          // completeBreak(); // This is now handled by a separate useEffect
-          return next; // Or stay at max
+          return breakDuration;
         }
-
         return next;
       });
     }, 1000);
@@ -69,15 +82,15 @@ export function BreakOverlay() {
   }, [breakDuration]);
 
   // Helper to close window reliably
-  const closeWindow = async () => {
+  const closeWindow = useCallback(async () => {
     try {
       await getCurrentWindow().hide();
     } catch (e) {
       console.error("Failed to hide window:", e);
     }
-  };
+  }, []);
 
-  const handleBreakComplete = async () => {
+  const handleBreakComplete = useCallback(async () => {
     if (!breakType || submittedRef.current) return;
 
     submittedRef.current = true;
@@ -86,12 +99,12 @@ export function BreakOverlay() {
       await invoke("reset_break", { breakType });
     } catch (error) {
       console.error("Failed to record break completion:", error);
-      submittedRef.current = false; // Retry on failure?
+      submittedRef.current = false; // Retry on failure
     }
     await closeWindow();
-  };
+  }, [breakType, closeWindow]);
 
-  const handleSkip = async () => {
+  const handleSkip = useCallback(async () => {
     if (!breakType) {
       // If we don't know the type, try to guess or just hide
       await closeWindow();
@@ -105,15 +118,14 @@ export function BreakOverlay() {
       console.error("Failed to record postponed break:", error);
     }
     await closeWindow();
-  };
+  }, [breakType, closeWindow]);
 
-  // We need to bridge the interval to the handler
+  // Auto-complete break when duration is reached
   useEffect(() => {
     if (breakDuration > 0 && elapsedTime >= breakDuration) {
       handleBreakComplete();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elapsedTime, breakDuration, breakType]); // handleBreakComplete changes on every render
+  }, [elapsedTime, breakDuration, handleBreakComplete]);
 
   const progress = breakDuration > 0 ? (elapsedTime / breakDuration) * 100 : 0;
   const remainingSeconds = Math.max(0, breakDuration - elapsedTime);

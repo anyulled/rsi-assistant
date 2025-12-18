@@ -7,6 +7,7 @@ use crate::commands::AppState;
 use crate::idle::DeviceQueryIdleDetector;
 use crate::stats::StatsStore;
 use crate::timer::{BreakConfig, TimerService};
+use chrono::Datelike;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
@@ -41,39 +42,55 @@ pub fn run() {
             // System Tray Setup - Comprehensive Menu
             // TODO: Use IconMenuItem once we have distinct icons. For now using standard MenuItem with placeholders where icons would be.
             let show_i = MenuItem::with_id(app, "show", "Show RSI Assistant", true, None::<&str>)?;
-            let rest_break_i = MenuItem::with_id(app, "rest_break", "Take Rest Break Now", true, None::<&str>)?;
+            let rest_break_i =
+                MenuItem::with_id(app, "rest_break", "Take Rest Break Now", true, None::<&str>)?;
             let exercises_i = MenuItem::with_id(app, "exercises", "Exercises", true, None::<&str>)?;
-            let statistics_i = MenuItem::with_id(app, "statistics", "Statistics", true, None::<&str>)?;
+            let statistics_i =
+                MenuItem::with_id(app, "statistics", "Statistics", true, None::<&str>)?;
 
             // Operation Mode submenu
             // Default to Normal being checked
-            let mode_normal_i = CheckMenuItem::with_id(app, "mode_normal", "Normal", true, true, None::<&str>)?;
-            let mode_quiet_i = CheckMenuItem::with_id(app, "mode_quiet", "Quiet", true, false, None::<&str>)?;
-            let mode_suspended_i = CheckMenuItem::with_id(app, "mode_suspended", "Suspended", true, false, None::<&str>)?;
+            let mode_normal_i =
+                CheckMenuItem::with_id(app, "mode_normal", "Normal", true, true, None::<&str>)?;
+            let mode_quiet_i =
+                CheckMenuItem::with_id(app, "mode_quiet", "Quiet", true, false, None::<&str>)?;
+            let mode_suspended_i = CheckMenuItem::with_id(
+                app,
+                "mode_suspended",
+                "Suspended",
+                true,
+                false,
+                None::<&str>,
+            )?;
 
-            let mode_submenu = Submenu::with_items(app, "Mode", true, &[
-                &mode_normal_i,
-                &mode_quiet_i,
-                &mode_suspended_i,
-            ])?;
+            let mode_submenu = Submenu::with_items(
+                app,
+                "Mode",
+                true,
+                &[&mode_normal_i, &mode_quiet_i, &mode_suspended_i],
+            )?;
 
-            let preferences_i = MenuItem::with_id(app, "preferences", "Preferences", true, None::<&str>)?;
+            let preferences_i =
+                MenuItem::with_id(app, "preferences", "Preferences", true, None::<&str>)?;
             let about_i = MenuItem::with_id(app, "about", "About", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
-            let menu = Menu::with_items(app, &[
-                &show_i,
-                &PredefinedMenuItem::separator(app)?,
-                &rest_break_i,
-                &exercises_i,
-                &statistics_i,
-                &PredefinedMenuItem::separator(app)?,
-                &mode_submenu,
-                &preferences_i,
-                &about_i,
-                &PredefinedMenuItem::separator(app)?,
-                &quit_i,
-            ])?;
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &show_i,
+                    &PredefinedMenuItem::separator(app)?,
+                    &rest_break_i,
+                    &exercises_i,
+                    &statistics_i,
+                    &PredefinedMenuItem::separator(app)?,
+                    &mode_submenu,
+                    &preferences_i,
+                    &about_i,
+                    &PredefinedMenuItem::separator(app)?,
+                    &quit_i,
+                ],
+            )?;
 
             // Capture handles for event closure
             let mode_normal_handle = mode_normal_i.clone();
@@ -98,7 +115,20 @@ pub fn run() {
                             }
                         }
                         "about" => {
-                            let _ = app.dialog().message("RSI Recovery Assistant\n\nA tool to help you prevent Repetitive Strain Injury.\n\nVersion: 0.1.0");
+                            let about_message = format!(
+                                "RSI Recovery Assistant\n\n\
+                                A tool to help you prevent Repetitive Strain Injury by \
+                                reminding you to take regular breaks and providing exercises.\n\n\
+                                Version: {}\n\
+                                Developer: {}\n\
+                                License: MIT\n\
+                                Copyright © {} Anyul Rivas\n\n\
+                                Built with Tauri and Rust",
+                                env!("CARGO_PKG_VERSION"),
+                                env!("CARGO_PKG_AUTHORS"),
+                                chrono::Utc::now().year()
+                            );
+                            let _ = app.dialog().message(about_message);
                         }
                         "rest_break" => {
                             if let Some(win) = window {
@@ -131,31 +161,31 @@ pub fn run() {
                             }
                         }
                         "mode_normal" => {
-                             let state = app.state::<AppState>();
-                             let mut service = state.timer_service.lock().unwrap();
-                             service.set_mode(timer::OperationMode::Normal);
+                            let state = app.state::<AppState>();
+                            let mut service = state.timer_service.lock().unwrap();
+                            service.set_mode(timer::OperationMode::Normal);
 
-                             let _ = mode_normal_handle.set_checked(true);
-                             let _ = mode_quiet_handle.set_checked(false);
-                             let _ = mode_suspended_handle.set_checked(false);
+                            let _ = mode_normal_handle.set_checked(true);
+                            let _ = mode_quiet_handle.set_checked(false);
+                            let _ = mode_suspended_handle.set_checked(false);
                         }
                         "mode_quiet" => {
-                             let state = app.state::<AppState>();
-                             let mut service = state.timer_service.lock().unwrap();
-                             service.set_mode(timer::OperationMode::Quiet);
+                            let state = app.state::<AppState>();
+                            let mut service = state.timer_service.lock().unwrap();
+                            service.set_mode(timer::OperationMode::Quiet);
 
-                             let _ = mode_normal_handle.set_checked(false);
-                             let _ = mode_quiet_handle.set_checked(true);
-                             let _ = mode_suspended_handle.set_checked(false);
+                            let _ = mode_normal_handle.set_checked(false);
+                            let _ = mode_quiet_handle.set_checked(true);
+                            let _ = mode_suspended_handle.set_checked(false);
                         }
-                         "mode_suspended" => {
-                             let state = app.state::<AppState>();
-                             let mut service = state.timer_service.lock().unwrap();
-                             service.set_mode(timer::OperationMode::Suspended);
+                        "mode_suspended" => {
+                            let state = app.state::<AppState>();
+                            let mut service = state.timer_service.lock().unwrap();
+                            service.set_mode(timer::OperationMode::Suspended);
 
-                             let _ = mode_normal_handle.set_checked(false);
-                             let _ = mode_quiet_handle.set_checked(false);
-                             let _ = mode_suspended_handle.set_checked(true);
+                            let _ = mode_normal_handle.set_checked(false);
+                            let _ = mode_quiet_handle.set_checked(false);
+                            let _ = mode_suspended_handle.set_checked(true);
                         }
                         _ => {}
                     }
@@ -165,11 +195,11 @@ pub fn run() {
             // Clone handle for background task
             let handle = app.handle().clone();
 
-use tauri_plugin_notification::NotificationExt;
+            use tauri_plugin_notification::NotificationExt;
 
-// ... imports ...
+            // ... imports ...
 
-// ... inside run() setup ...
+            // ... inside run() setup ...
 
             // Spawn background task
             tauri::async_runtime::spawn(async move {
@@ -200,13 +230,17 @@ use tauri_plugin_notification::NotificationExt;
 
                     // Notifications
                     if status.micro_is_overdue && !was_micro_overdue {
-                        let _ = handle.notification().builder()
+                        let _ = handle
+                            .notification()
+                            .builder()
                             .title("Microbreak Time")
                             .body("Take a short 30s break!")
                             .show();
                     }
                     if status.rest_is_overdue && !was_rest_overdue {
-                         let _ = handle.notification().builder()
+                        let _ = handle
+                            .notification()
+                            .builder()
                             .title("Rest Break Time")
                             .body("Time for a longer rest.")
                             .show();
@@ -230,7 +264,7 @@ use tauri_plugin_notification::NotificationExt;
                             let _ = overlay.set_focus();
                             let _ = overlay.set_always_on_top(true);
                         } else {
-                             let _ = overlay.hide();
+                            let _ = overlay.hide();
                         }
                     }
                 }
@@ -245,7 +279,9 @@ use tauri_plugin_notification::NotificationExt;
             commands::get_statistics,
             commands::record_break_taken,
             commands::record_break_postponed,
-            commands::reset_break
+            commands::reset_break,
+            commands::set_mode,
+            commands::trigger_break
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
