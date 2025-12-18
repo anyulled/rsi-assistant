@@ -1,4 +1,3 @@
-
 import "../setupTests";
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { render, fireEvent, waitFor, within } from "@testing-library/react";
@@ -17,7 +16,7 @@ describe("Settings", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (load as any).mockReset();
 
-    global.alert = mock(() => { });
+    global.alert = mock(() => {});
 
     // Default mock implementation for load
     mockStore = new FakeStore();
@@ -111,11 +110,12 @@ describe("Settings", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation((cmd: string) => {
       // Backend has defaults
-      if (cmd === "get_settings") return Promise.resolve({
-        ...storedConfig,
-        microbreak_interval: 180,
-        mode: "Normal"
-      });
+      if (cmd === "get_settings")
+        return Promise.resolve({
+          ...storedConfig,
+          microbreak_interval: 180,
+          mode: "Normal",
+        });
       return Promise.resolve();
     });
 

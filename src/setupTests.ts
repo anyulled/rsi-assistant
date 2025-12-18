@@ -29,7 +29,7 @@ mock.module("@tauri-apps/api/window", () => ({
 }));
 
 mock.module("@tauri-apps/api/event", () => ({
-  listen: mock(() => Promise.resolve(() => { })),
+  listen: mock(() => Promise.resolve(() => {})),
   emit: mock(() => Promise.resolve()),
 }));
 

@@ -129,13 +129,25 @@ export function Settings() {
         <div>
           <label className="block text-gray-700 dark:text-gray-300 mb-2">
             Microbreak Interval (s):
-            <input type="number" name="microbreak_interval" value={config.microbreak_interval} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" />
+            <input
+              type="number"
+              name="microbreak_interval"
+              value={config.microbreak_interval}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            />
           </label>
         </div>
         <div>
           <label className="block text-gray-700 dark:text-gray-300 mb-2">
             Microbreak Duration (s):
-            <input type="number" name="microbreak_duration" value={config.microbreak_duration} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" />
+            <input
+              type="number"
+              name="microbreak_duration"
+              value={config.microbreak_duration}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            />
           </label>
         </div>
         <div className="md:col-span-2">
@@ -150,13 +162,25 @@ export function Settings() {
         <div>
           <label className="block text-gray-700 dark:text-gray-300 mb-2">
             Rest Interval (s):
-            <input type="number" name="rest_interval" value={config.rest_interval} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" />
+            <input
+              type="number"
+              name="rest_interval"
+              value={config.rest_interval}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            />
           </label>
         </div>
         <div>
           <label className="block text-gray-700 dark:text-gray-300 mb-2">
             Rest Duration (s):
-            <input type="number" name="rest_duration" value={config.rest_duration} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" />
+            <input
+              type="number"
+              name="rest_duration"
+              value={config.rest_duration}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            />
           </label>
         </div>
         <div className="md:col-span-2">
@@ -184,7 +208,13 @@ export function Settings() {
         <div>
           <label className="block text-gray-700 dark:text-gray-300 mb-2">
             Warning Duration (s):
-            <input type="number" name="warning_duration" value={config.warning_duration} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" />
+            <input
+              type="number"
+              name="warning_duration"
+              value={config.warning_duration}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            />
           </label>
         </div>
         <div className="md:col-span-2">
@@ -199,7 +229,12 @@ export function Settings() {
         <div className="md:col-span-2">
           <label className="block text-gray-700 dark:text-gray-300 mb-2">
             Mode:
-            <select name="mode" value={config.mode} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+            <select
+              name="mode"
+              value={config.mode}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            >
               <option value="Normal">Normal</option>
               <option value="Quiet">Quiet</option>
               <option value="Suspended">Suspended</option>
@@ -207,7 +242,10 @@ export function Settings() {
           </label>
         </div>
       </div>
-      <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-md font-medium transition-colors">
+      <button
+        type="submit"
+        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-md font-medium transition-colors"
+      >
         Save Settings
       </button>
     </form>
