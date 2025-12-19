@@ -78,6 +78,55 @@ describe("BreakOverlay", () => {
     expect(screen.getByText("Break Progress")).toBeInTheDocument();
   });
 
+  it("starts with a full countdown and full progress bar", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useTimer as any).mockReturnValue({
+      micro_is_overdue: true,
+      rest_is_overdue: false,
+    });
+
+    const { baseElement } = render(<BreakOverlay />);
+    const screen = within(baseElement);
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("0:20 remaining")).toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
+
+    const progressBar = screen.getByTestId("progress-bar");
+    expect(progressBar.getAttribute("style")).toContain("width: 100%");
+  });
+
+  it("counts down and shrinks the progress bar over time", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useTimer as any).mockReturnValue({
+      micro_is_overdue: true,
+      rest_is_overdue: false,
+    });
+
+    const { baseElement } = render(<BreakOverlay />);
+    const screen = within(baseElement);
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("0:20 remaining")).toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+    });
+
+    expect(screen.getByText("0:19 remaining")).toBeInTheDocument();
+
+    const progressBar = screen.getByTestId("progress-bar");
+    const width = progressBar.style.width.replace("%", "");
+    expect(Number(width)).toBeLessThan(100);
+  });
+
   it("fetches settings to get break duration", async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
