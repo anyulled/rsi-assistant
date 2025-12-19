@@ -150,7 +150,7 @@ export function BreakOverlay() {
           <div
             data-testid="progress-bar"
             className="bg-green-500 h-4 rounded-full transition-all duration-1000"
-            style={{ width: `${Math.min(progress, 100)}%`, transformOrigin: "right" }}
+            style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
         <p className="text-xs text-gray-400 mt-2 text-center">Break will complete automatically</p>
