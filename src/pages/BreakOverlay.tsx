@@ -127,8 +127,9 @@ export function BreakOverlay() {
     }
   }, [elapsedTime, breakDuration, handleBreakComplete]);
 
-  const progress = breakDuration > 0 ? (elapsedTime / breakDuration) * 100 : 0;
-  const remainingSeconds = Math.max(0, breakDuration - elapsedTime);
+  const activeDuration = breakDuration > 0 ? breakDuration : targetDuration;
+  const progress = activeDuration > 0 ? Math.max(0, ((activeDuration - elapsedTime) / activeDuration) * 100) : 0;
+  const remainingSeconds = Math.max(0, activeDuration - elapsedTime);
   const remainingMinutes = Math.floor(remainingSeconds / 60);
   const remainingSecondsDisplay = remainingSeconds % 60;
 
@@ -145,8 +146,12 @@ export function BreakOverlay() {
             {remainingMinutes}:{remainingSecondsDisplay.toString().padStart(2, "0")} remaining
           </span>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-4">
-          <div className="bg-green-500 h-4 rounded-full transition-all duration-1000" style={{ width: `${Math.min(progress, 100)}%` }} />
+        <div className="w-full bg-gray-700 rounded-full h-4 flex justify-end overflow-hidden">
+          <div
+            data-testid="progress-bar"
+            className="bg-green-500 h-4 rounded-full transition-all duration-1000"
+            style={{ width: `${Math.min(progress, 100)}%` }}
+          />
         </div>
         <p className="text-xs text-gray-400 mt-2 text-center">Break will complete automatically</p>
       </div>
