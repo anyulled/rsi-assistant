@@ -1,5 +1,4 @@
 import { mock } from "bun:test";
-import type { BreakConfig, TimerStatus } from "./types";
 
 export class FakeStore {
   private data: Map<string, unknown> = new Map();
@@ -34,35 +33,9 @@ export class FakeStore {
 }
 
 // Default timer status for tests
-export const DEFAULT_TIMER_STATUS: TimerStatus = {
-  dailyUsage: 0,
-  dailyLimit: 28800,
-  microActive: 0,
-  microTarget: 180,
-  microIsOverdue: false,
-  restActive: 0,
-  restTarget: 2700,
-  restIsOverdue: false,
-  currentIdle: 0,
-  mode: "Normal",
-  breakType: null,
-  breakDuration: 0,
-  breakElapsed: 0,
-};
-
-// Default break config for tests
-export const DEFAULT_BREAK_CONFIG: BreakConfig = {
-  microbreakInterval: 180,
-  microbreakDuration: 20,
-  restInterval: 2700,
-  restDuration: 300,
-  dailyLimit: 28800,
-  microbreakEnabled: false,
-  restEnabled: false,
-  dailyEnabled: false,
-  warningDuration: 0,
-  mode: "Normal",
-};
+// Default timer status for tests
+import { DEFAULT_BREAK_CONFIG, DEFAULT_TIMER_STATUS } from "./constants";
+export { DEFAULT_BREAK_CONFIG, DEFAULT_TIMER_STATUS };
 
 // Store data for tests
 const mockStoreData: Record<string, unknown> = {};

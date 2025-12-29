@@ -5,21 +5,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 // Default status prevents null checks throughout the codebase
-const DEFAULT_TIMER_STATUS: TimerStatus = {
-  dailyUsage: 0,
-  dailyLimit: 28800, // 8 hours default
-  microActive: 0,
-  microTarget: 180, // 3 minutes default
-  microIsOverdue: false,
-  restActive: 0,
-  restTarget: 2700, // 45 minutes default
-  restIsOverdue: false,
-  currentIdle: 0,
-  mode: "Normal",
-  breakType: null,
-  breakDuration: 0,
-  breakElapsed: 0,
-};
+import { DEFAULT_TIMER_STATUS } from "@/constants";
 
 export function useTimer(): TimerStatus {
   const [status, setStatus] = useState<TimerStatus>(DEFAULT_TIMER_STATUS);
