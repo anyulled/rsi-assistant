@@ -7,11 +7,15 @@ import { useTimer } from "./useTimer";
 describe("useTimer", () => {
   beforeEach(() => {
     // Mocks are reset in afterEach of setupTests
+    // Ensure mockInvoke is in a clean state
+    mockInvoke.mockClear();
   });
 
   it("initializes with default status (not null)", () => {
-    // Set invoke to never resolve - simulates slow backend
-    mockInvoke.mockImplementation(() => new Promise(() => {}));
+    // The setupTests default mockInvoke returns DEFAULT_TIMER_STATUS immediately.
+    // However, useState initialization happens before effects run.
+    // So result.current should start as DEFAULT_TIMER_STATUS.
+    // Even if effect runs and updates it, it updates it to the SAME value (DEFAULT_TIMER_STATUS).
 
     const { result } = renderHook(() => useTimer());
     expect(result.current).toEqual(DEFAULT_TIMER_STATUS);
@@ -19,19 +23,9 @@ describe("useTimer", () => {
 
   it("updates status when backend returns data", async () => {
     const backendStatus: TimerStatus = {
+      ...DEFAULT_TIMER_STATUS,
       dailyUsage: 100,
-      dailyLimit: 28800,
-      microActive: 50,
-      microTarget: 180,
-      microIsOverdue: false,
-      restActive: 200,
-      restTarget: 2700,
-      restIsOverdue: false,
-      currentIdle: 0,
-      mode: "Normal",
-      breakType: null,
-      breakDuration: 0,
-      breakElapsed: 0,
+      mode: "Quiet",
     };
 
     mockInvoke.mockImplementation((cmd: string) => {
@@ -43,11 +37,14 @@ describe("useTimer", () => {
 
     const { result } = renderHook(() => useTimer());
 
+    // Wait for the update to happen
     await waitFor(
       () => {
-        expect(result.current.dailyUsage).toEqual(100);
+        expect(result.current).toEqual(backendStatus);
       },
       { timeout: 1000 }
     );
+
+    expect(mockInvoke).toHaveBeenCalledWith("get_timer_state");
   });
 });
