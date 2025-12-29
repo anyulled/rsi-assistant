@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
-import { fireEvent, render, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "../setupTests";
 import { FakeStore } from "../testUtils";
@@ -175,7 +175,9 @@ describe("Settings", () => {
     expect(eventCallback).toBeDefined();
 
     // 4. Simulate event
-    if (eventCallback) eventCallback({ payload: "Reading" });
+    await act(async () => {
+      if (eventCallback) eventCallback({ payload: "Reading" });
+    });
 
     // 5. Assert mode updated to "Reading"
     await waitFor(() => {

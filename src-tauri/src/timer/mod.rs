@@ -122,11 +122,9 @@ impl TimerService {
             // Reset the timers when a successful break period (inactivity) has passed.
             if self.config.microbreak_enabled
                 && self.current_idle >= self.config.microbreak_duration
+                && self.micro_active > 0
             {
-                if self.micro_active > 0 {
-                    self.micro_active = 0;
-                    // Keep track of idle growth beyond the limit for potential future UI indicators.
-                }
+                self.micro_active = 0;
             }
 
             if self.config.rest_enabled
