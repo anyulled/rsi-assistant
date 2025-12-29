@@ -44,8 +44,9 @@ echo ""
 
 # Run coverage once and capture output (this also runs tests)
 # Don't use set -e here so we can capture the output even if it fails
+# Exclude integration files (lib.rs, main.rs) from coverage as they're not unit-testable
 set +e
-COVERAGE_OUTPUT=$(cargo llvm-cov --all-features --workspace 2>&1)
+COVERAGE_OUTPUT=$(cargo llvm-cov --all-features --workspace --ignore-filename-regex '(lib|main)\.rs' 2>&1)
 COVERAGE_EXIT_CODE=$?
 set -e
 
