@@ -1,45 +1,44 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { render, within, waitFor } from "@testing-library/react";
+import { render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { mockInvoke } from "../setupTests";
 import { Statistics } from "./Statistics";
 
-// Mock Tauri API
-const mockInvoke = mock(() => Promise.resolve([]));
-mock.module("@tauri-apps/api/core", () => ({
-  invoke: mockInvoke,
-}));
+// Uses global mockInvoke from setupTests.ts
 
 describe("Statistics", () => {
   beforeEach(() => {
-    mockInvoke.mockClear();
+    // Mock is reset in afterEach of setupTests
   });
 
   test("renders statistics view with calendar and table", async () => {
-    mockInvoke.mockResolvedValue([
-      {
-        date: "2024-01-15",
-        totalUsageSeconds: 3600,
-        microPrompts: 5,
-        microRepeatedPrompts: 1,
-        microPromptedTaken: 4,
-        microNaturalTaken: 2,
-        microSkipped: 0,
-        microPostponed: 1,
-        restPrompts: 2,
-        restRepeatedPrompts: 0,
-        restPromptedTaken: 2,
-        restNaturalTaken: 1,
-        restSkipped: 0,
-        restPostponed: 0,
-        dailyPrompts: 0,
-        dailyRepeatedPrompts: 0,
-        dailyPromptedTaken: 0,
-        dailyNaturalTaken: 0,
-        dailySkipped: 0,
-        dailyPostponed: 0,
-        overdueSeconds: 0,
-      },
-    ]);
+    mockInvoke.mockImplementation(() =>
+      Promise.resolve([
+        {
+          date: "2024-01-15",
+          totalUsageSeconds: 3600,
+          microPrompts: 5,
+          microRepeatedPrompts: 1,
+          microPromptedTaken: 4,
+          microNaturalTaken: 2,
+          microSkipped: 0,
+          microPostponed: 1,
+          restPrompts: 2,
+          restRepeatedPrompts: 0,
+          restPromptedTaken: 2,
+          restNaturalTaken: 1,
+          restSkipped: 0,
+          restPostponed: 0,
+          dailyPrompts: 0,
+          dailyRepeatedPrompts: 0,
+          dailyPromptedTaken: 0,
+          dailyNaturalTaken: 0,
+          dailySkipped: 0,
+          dailyPostponed: 0,
+          overdueSeconds: 0,
+        },
+      ])
+    );
 
     const { container } = render(<Statistics />);
 
@@ -67,7 +66,7 @@ describe("Statistics", () => {
   });
 
   test("displays empty state when no data available", async () => {
-    mockInvoke.mockResolvedValue([]);
+    mockInvoke.mockImplementation(() => Promise.resolve([]));
 
     const { container } = render(<Statistics />);
 
@@ -81,7 +80,7 @@ describe("Statistics", () => {
   });
 
   test("calendar date selection triggers data reload", async () => {
-    mockInvoke.mockResolvedValue([]);
+    mockInvoke.mockImplementation(() => Promise.resolve([]));
 
     const { container } = render(<Statistics />);
 
@@ -95,33 +94,35 @@ describe("Statistics", () => {
   });
 
   test("renders with usage data", async () => {
-    const todayStr = new Date().toISOString().split("T")[0]; // Today's date in YYYY-MM-DD
+    const todayStr = new Date().toISOString().split("T")[0];
 
-    mockInvoke.mockResolvedValue([
-      {
-        date: todayStr,
-        totalUsageSeconds: 7200, // 2 hours
-        microPrompts: 5,
-        microRepeatedPrompts: 1,
-        microPromptedTaken: 4,
-        microNaturalTaken: 1,
-        microSkipped: 0,
-        microPostponed: 1,
-        restPrompts: 2,
-        restRepeatedPrompts: 0,
-        restPromptedTaken: 2,
-        restNaturalTaken: 0,
-        restSkipped: 0,
-        restPostponed: 0,
-        dailyPrompts: 0,
-        dailyRepeatedPrompts: 0,
-        dailyPromptedTaken: 0,
-        dailyNaturalTaken: 0,
-        dailySkipped: 0,
-        dailyPostponed: 0,
-        overdueSeconds: 0,
-      },
-    ]);
+    mockInvoke.mockImplementation(() =>
+      Promise.resolve([
+        {
+          date: todayStr,
+          totalUsageSeconds: 7200,
+          microPrompts: 5,
+          microRepeatedPrompts: 1,
+          microPromptedTaken: 4,
+          microNaturalTaken: 1,
+          microSkipped: 0,
+          microPostponed: 1,
+          restPrompts: 2,
+          restRepeatedPrompts: 0,
+          restPromptedTaken: 2,
+          restNaturalTaken: 0,
+          restSkipped: 0,
+          restPostponed: 0,
+          dailyPrompts: 0,
+          dailyRepeatedPrompts: 0,
+          dailyPromptedTaken: 0,
+          dailyNaturalTaken: 0,
+          dailySkipped: 0,
+          dailyPostponed: 0,
+          overdueSeconds: 0,
+        },
+      ])
+    );
 
     const { container } = render(<Statistics />);
 
@@ -129,30 +130,25 @@ describe("Statistics", () => {
       expect(mockInvoke).toHaveBeenCalled();
     });
 
-    // Verify data is displayed - use getAllByText for values that appear multiple times
     const fives = within(container).getAllByText("5");
     const fours = within(container).getAllByText("4");
 
-    // Should have at least one "5" (microPrompts) and one "4" (microPromptedTaken)
     expect(fives.length).toBeGreaterThan(0);
     expect(fours.length).toBeGreaterThan(0);
   });
 
   test("switches between tabs", async () => {
-    mockInvoke.mockResolvedValue([]);
+    mockInvoke.mockImplementation(() => Promise.resolve([]));
 
     const user = userEvent.setup();
     const { container } = render(<Statistics />);
 
-    // Default tab should be "Breaks"
     const breaksTab = within(container).getByRole("tab", { name: /breaks/i });
     expect(breaksTab.getAttribute("data-state")).toBe("active");
 
-    // Click on Activity tab
     const activityTab = within(container).getByRole("tab", { name: /activity/i });
     await user.click(activityTab);
 
-    // Should show "coming soon" message
     await waitFor(() => {
       expect(within(container).getByText(/activity timeline coming soon/i)).toBeDefined();
     });

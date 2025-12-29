@@ -1,7 +1,8 @@
-import { Window } from "happy-dom";
-import { expect, afterEach, mock } from "bun:test";
-import { cleanup } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
+import { cleanup } from "@testing-library/react";
+import { afterEach, expect, mock } from "bun:test";
+import { Window } from "happy-dom";
+import type { BreakConfig, TimerStatus } from "./types";
 
 const window = new Window();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,26 +16,86 @@ global.getComputedStyle = window.getComputedStyle;
 
 expect.extend(matchers);
 
-// Mock Tauri APIs
-mock.module("@tauri-apps/api/core", () => ({
-  invoke: mock(() => Promise.resolve()),
+// Default timer status for tests
+export const DEFAULT_TIMER_STATUS: TimerStatus = {
+  dailyUsage: 0,
+  dailyLimit: 28800,
+  microActive: 0,
+  microTarget: 180,
+  microIsOverdue: false,
+  restActive: 0,
+  restTarget: 2700,
+  restIsOverdue: false,
+  currentIdle: 0,
+  mode: "Normal",
+  breakType: null,
+  breakDuration: 0,
+  breakElapsed: 0,
+};
+
+// Default break config for tests
+export const DEFAULT_BREAK_CONFIG: BreakConfig = {
+  microbreakInterval: 180,
+  microbreakDuration: 20,
+  restInterval: 2700,
+  restDuration: 300,
+  dailyLimit: 28800,
+};
+
+// Store data for tests
+const mockStoreData: Record<string, unknown> = {};
+
+// Export store data helpers
+export const getStoreData = () => mockStoreData;
+export const setStoreData = (key: string, value: unknown) => {
+  mockStoreData[key] = value;
+};
+export const clearStoreData = () => {
+  Object.keys(mockStoreData).forEach((key) => delete mockStoreData[key]);
+};
+
+// Window label for testing
+let _windowLabel = "main";
+export const setWindowLabel = (label: string) => {
+  _windowLabel = label;
+};
+export const getWindowLabel = () => _windowLabel;
+
+// Mock functions
+export const mockInvoke = mock((cmd: string, _args?: unknown) => {
+  switch (cmd) {
+    case "get_timer_state":
+      return Promise.resolve(DEFAULT_TIMER_STATUS);
+    case "get_settings":
+      return Promise.resolve(DEFAULT_BREAK_CONFIG);
+    default:
+      return Promise.resolve(null);
+  }
+});
+
+export const mockListen = mock(() => Promise.resolve(() => {}));
+export const mockEmit = mock(() => Promise.resolve());
+export const mockGetCurrentWindow = mock(() => ({
+  label: _windowLabel,
+  hide: mock(() => Promise.resolve()),
+  show: mock(() => Promise.resolve()),
 }));
 
-mock.module("@tauri-apps/api/window", () => ({
-  getCurrentWindow: mock(() => ({
-    hide: mock(() => Promise.resolve()),
-    show: mock(() => Promise.resolve()),
-    label: "main",
-  })),
+// Mock Tauri APIs
+mock.module("@tauri-apps/api/core", () => ({
+  invoke: (...args: unknown[]) => mockInvoke(...(args as [string, unknown?])),
 }));
 
 mock.module("@tauri-apps/api/event", () => ({
-  listen: mock(() => Promise.resolve(() => {})),
-  emit: mock(() => Promise.resolve()),
+  listen: (...args: unknown[]) => mockListen(...(args as [])),
+  emit: (...args: unknown[]) => mockEmit(...(args as [])),
+}));
+
+mock.module("@tauri-apps/api/window", () => ({
+  getCurrentWindow: () => mockGetCurrentWindow(),
 }));
 
 // Mock Tauri Store plugin
-const mockStoreData: Record<string, unknown> = {};
 mock.module("@tauri-apps/plugin-store", () => ({
   load: mock(() =>
     Promise.resolve({
@@ -54,4 +115,34 @@ mock.module("@tauri-apps/plugin-store", () => ({
 
 afterEach(() => {
   cleanup();
+  // Reset mock call history AND implementation
+  mockInvoke.mockReset();
+  mockListen.mockReset();
+  mockEmit.mockReset();
+  mockGetCurrentWindow.mockReset();
+
+  // Restore default implementations
+  mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {
+    switch (cmd) {
+      case "get_timer_state":
+        return Promise.resolve(DEFAULT_TIMER_STATUS);
+      case "get_settings":
+        return Promise.resolve(DEFAULT_BREAK_CONFIG);
+      default:
+        return Promise.resolve(null);
+    }
+  });
+
+  mockListen.mockImplementation(() => Promise.resolve(() => {}));
+  mockEmit.mockImplementation(() => Promise.resolve());
+  mockGetCurrentWindow.mockImplementation(() => ({
+    label: _windowLabel,
+    hide: mock(() => Promise.resolve()),
+    show: mock(() => Promise.resolve()),
+  }));
+
+  // Reset window label
+  _windowLabel = "main";
+  // Reset store data
+  clearStoreData();
 });

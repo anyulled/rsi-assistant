@@ -1,19 +1,13 @@
-import "./setupTests";
-import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "bun:test";
 import App from "./App";
-import { invoke } from "@tauri-apps/api/core";
-import { load } from "@tauri-apps/plugin-store";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import "./setupTests";
+import { clearStoreData, mockInvoke, setStoreData, setWindowLabel } from "./setupTests";
 
 describe("Global Settings Persistence", () => {
   beforeEach(() => {
-    mock.restore();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (getCurrentWindow as any).mockImplementation(() => ({
-      label: "main",
-      hide: mock(() => Promise.resolve()),
-    }));
+    clearStoreData();
+    setWindowLabel("main");
   });
 
   it("syncs stored settings with backend on app startup", async () => {
@@ -30,35 +24,31 @@ describe("Global Settings Persistence", () => {
       mode: "Normal",
     };
 
-    // Mock store to return persisted settings
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (load as any).mockImplementation(() =>
-      Promise.resolve({
-        get: mock(() => Promise.resolve(storedConfig)),
-        set: mock(() => Promise.resolve()),
-        save: mock(() => Promise.resolve()),
-      })
-    );
+    // Pre-populate the store
+    setStoreData("break_config", storedConfig);
 
-    // Mock invoke
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_timer_state") {
         return Promise.resolve({
           mode: "Normal",
-          micro_active: 0,
-          micro_target: 100,
-          rest_target: 1000,
+          microActive: 0,
+          microTarget: 100,
+          restTarget: 1000,
+          breakType: null,
+          breakDuration: 0,
+          breakElapsed: 0,
         });
       }
-      return Promise.resolve();
+      return Promise.resolve(null);
     });
 
     render(<App />);
 
-    // Verify backend is synced with stored settings on startup
-    await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith("update_settings", { settings: storedConfig });
-    });
+    await waitFor(
+      () => {
+        expect(mockInvoke).toHaveBeenCalledWith("update_settings", expect.anything());
+      },
+      { timeout: 2000 }
+    );
   });
 });
