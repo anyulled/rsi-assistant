@@ -16,7 +16,7 @@ describe("BreakOverlay", () => {
     mock.restore();
     // Reset invoke mock to return settings by default
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
+    (invoke as any).mockImplementation((_cmd: string) => {
       return Promise.resolve();
     });
   });

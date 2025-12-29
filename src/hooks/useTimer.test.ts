@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { renderHook, waitFor } from "@testing-library/react";
-import { useTimer } from "./useTimer";
-import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "bun:test";
+import { useTimer } from "./useTimer";
 
-describe.skip("useTimer", () => {
+describe("useTimer", () => {
   beforeEach(() => {
     // Reset mocks to default implementation before each test
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation(() => Promise.resolve(null));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (listen as any).mockImplementation(() => Promise.resolve(() => {}));
+    (listen as any).mockImplementation(() => Promise.resolve(() => { }));
   });
 
   it("initializes with null status", () => {
@@ -20,16 +20,19 @@ describe.skip("useTimer", () => {
 
   it("fetches initial status on mount", async () => {
     const mockStatus = {
-      daily_usage: 100,
-      daily_limit: 28800,
-      micro_active: 50,
-      micro_target: 180,
-      micro_is_overdue: false,
-      rest_active: 200,
-      rest_target: 2700,
-      rest_is_overdue: false,
-      current_idle: 0,
+      dailyUsage: 100,
+      dailyLimit: 28800,
+      microActive: 50,
+      microTarget: 180,
+      microIsOverdue: false,
+      restActive: 200,
+      restTarget: 2700,
+      restIsOverdue: false,
+      currentIdle: 0,
       mode: "Normal",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
     };
 
     // Actually, let's just make sure we match what we check in toEqual
@@ -57,22 +60,25 @@ describe.skip("useTimer", () => {
       if (event === "timer-update") {
         eventHandler = handler;
       }
-      return Promise.resolve(() => {});
+      return Promise.resolve(() => { });
     });
 
     renderHook(() => useTimer());
 
     const newStatus = {
-      daily_usage: 101,
-      daily_limit: 28800,
-      micro_active: 51,
-      micro_target: 180,
-      micro_is_overdue: false,
-      rest_active: 201,
-      rest_target: 2700,
-      rest_is_overdue: false,
-      current_idle: 0,
+      dailyUsage: 101,
+      dailyLimit: 28800,
+      microActive: 51,
+      microTarget: 180,
+      microIsOverdue: false,
+      restActive: 201,
+      restTarget: 2700,
+      restIsOverdue: false,
+      currentIdle: 0,
       mode: "Normal",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
     };
 
     // Simulate event

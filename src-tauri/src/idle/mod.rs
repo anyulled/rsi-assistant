@@ -18,9 +18,8 @@ impl DeviceQueryIdleDetector {
         let last_activity = Arc::new(Mutex::new(Self::now()));
         let last_activity_clone = last_activity.clone();
 
-        // Test if we can create DeviceState before spawning thread
         // This will panic if accessibility permissions aren't granted
-        let test_result = std::panic::catch_unwind(|| DeviceState::new());
+        let test_result = std::panic::catch_unwind(DeviceState::new);
 
         if test_result.is_err() {
             return Err(

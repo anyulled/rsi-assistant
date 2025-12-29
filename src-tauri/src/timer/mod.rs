@@ -193,11 +193,6 @@ impl TimerService {
         self.break_started_at = Some(Instant::now());
     }
 
-    /// Check if a break is currently in progress
-    pub fn is_break_active(&self) -> bool {
-        self.break_in_progress.is_some()
-    }
-
     /// Get the duration of the current break type
     fn get_break_duration(&self, break_type: BreakType) -> u64 {
         match break_type {

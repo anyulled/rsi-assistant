@@ -1,21 +1,21 @@
-import { useEffect, useState, useCallback, type ChangeEvent, type FormEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { BreakConfig } from "../types";
 
 const SETTINGS_STORE = "settings.json";
 const SETTINGS_KEY = "break_config";
 
 const DEFAULT_CONFIG: BreakConfig = {
-  microbreak_interval: 1800,
-  microbreak_duration: 30,
-  microbreak_enabled: true,
-  rest_interval: 5400,
-  rest_duration: 600,
-  rest_enabled: true,
-  daily_limit: 28800,
-  daily_enabled: true,
-  warning_duration: 30,
+  microbreakInterval: 1800,
+  microbreakDuration: 30,
+  microbreakEnabled: true,
+  restInterval: 5400,
+  restDuration: 600,
+  restEnabled: true,
+  dailyLimit: 28800,
+  dailyEnabled: true,
+  warningDuration: 30,
   mode: "Normal",
 };
 
@@ -76,7 +76,7 @@ export function Settings() {
       newValue = checked;
     } else if (type === "number") {
       const numVal = Number(value);
-      if (name === "daily_limit") {
+      if (name === "dailyLimit") {
         // UI shows hours, store in seconds
         newValue = numVal * 3600;
       } else {
@@ -131,8 +131,8 @@ export function Settings() {
             Microbreak Interval (s):
             <input
               type="number"
-              name="microbreak_interval"
-              value={config.microbreak_interval}
+              name="microbreakInterval"
+              value={config.microbreakInterval}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
@@ -143,8 +143,8 @@ export function Settings() {
             Microbreak Duration (s):
             <input
               type="number"
-              name="microbreak_duration"
-              value={config.microbreak_duration}
+              name="microbreakDuration"
+              value={config.microbreakDuration}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
@@ -152,7 +152,7 @@ export function Settings() {
         </div>
         <div className="md:col-span-2">
           <label className="inline-flex items-center text-gray-700 dark:text-gray-300">
-            <input type="checkbox" name="microbreak_enabled" checked={config.microbreak_enabled} onChange={handleChange} className="mr-2" />
+            <input type="checkbox" name="microbreakEnabled" checked={config.microbreakEnabled} onChange={handleChange} className="mr-2" />
             Enable Microbreaks
           </label>
         </div>
@@ -164,8 +164,8 @@ export function Settings() {
             Rest Interval (s):
             <input
               type="number"
-              name="rest_interval"
-              value={config.rest_interval}
+              name="restInterval"
+              value={config.restInterval}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
@@ -176,8 +176,8 @@ export function Settings() {
             Rest Duration (s):
             <input
               type="number"
-              name="rest_duration"
-              value={config.rest_duration}
+              name="restDuration"
+              value={config.restDuration}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
@@ -185,7 +185,7 @@ export function Settings() {
         </div>
         <div className="md:col-span-2">
           <label className="inline-flex items-center text-gray-700 dark:text-gray-300">
-            <input type="checkbox" name="rest_enabled" checked={config.rest_enabled} onChange={handleChange} className="mr-2" />
+            <input type="checkbox" name="restEnabled" checked={config.restEnabled} onChange={handleChange} className="mr-2" />
             Enable Rest Breaks
           </label>
         </div>
@@ -197,8 +197,8 @@ export function Settings() {
             Daily Limit (hours):
             <input
               type="number"
-              name="daily_limit"
-              value={config.daily_limit / 3600}
+              name="dailyLimit"
+              value={config.dailyLimit / 3600}
               onChange={handleChange}
               step="0.1"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
@@ -210,8 +210,8 @@ export function Settings() {
             Warning Duration (s):
             <input
               type="number"
-              name="warning_duration"
-              value={config.warning_duration}
+              name="warningDuration"
+              value={config.warningDuration}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
@@ -219,7 +219,7 @@ export function Settings() {
         </div>
         <div className="md:col-span-2">
           <label className="inline-flex items-center text-gray-700 dark:text-gray-300">
-            <input type="checkbox" name="daily_enabled" checked={config.daily_enabled} onChange={handleChange} className="mr-2" />
+            <input type="checkbox" name="dailyEnabled" checked={config.dailyEnabled} onChange={handleChange} className="mr-2" />
             Enable Daily Limit
           </label>
         </div>

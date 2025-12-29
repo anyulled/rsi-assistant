@@ -20,12 +20,7 @@ export function BreakOverlay() {
   console.log("Break state:", { breakType, breakDuration, breakElapsed });
 
   // Determine message based on break type
-  const message =
-    breakType === "rest"
-      ? "Rest Break Time!"
-      : breakType === "micro"
-        ? "Microbreak Time!"
-        : "Time for a break!";
+  const message = breakType === "rest" ? "Rest Break Time!" : breakType === "micro" ? "Microbreak Time!" : "Time for a break!";
 
   // Helper to close window reliably
   const closeWindow = useCallback(async () => {

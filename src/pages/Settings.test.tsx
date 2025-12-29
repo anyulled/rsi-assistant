@@ -1,10 +1,10 @@
-import "../setupTests";
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { render, fireEvent, waitFor, within } from "@testing-library/react";
-import { Settings } from "./Settings";
 import { invoke } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
+import { fireEvent, render, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import "../setupTests";
 import { FakeStore } from "../testUtils";
+import { Settings } from "./Settings";
 
 describe("Settings", () => {
   let mockStore: FakeStore;
@@ -26,15 +26,15 @@ describe("Settings", () => {
 
   it("loads settings from backend on mount when store is empty", async () => {
     const backendConfig = {
-      microbreak_interval: 180,
-      microbreak_duration: 30,
-      microbreak_enabled: true,
-      rest_interval: 2700,
-      rest_duration: 600,
-      rest_enabled: true,
-      daily_limit: 28800,
-      daily_enabled: true,
-      warning_duration: 30,
+      microbreakInterval: 180,
+      microbreakDuration: 30,
+      microbreakEnabled: true,
+      restInterval: 2700,
+      restDuration: 600,
+      restEnabled: true,
+      dailyLimit: 28800,
+      dailyEnabled: true,
+      warningDuration: 30,
       mode: "Normal",
     };
 
@@ -57,15 +57,15 @@ describe("Settings", () => {
 
   it("persists settings to store when saved", async () => {
     const backendConfig = {
-      microbreak_interval: 100,
-      microbreak_duration: 20,
-      microbreak_enabled: true,
-      rest_interval: 2000,
-      rest_duration: 500,
-      rest_enabled: true,
-      daily_limit: 4000,
-      daily_enabled: false,
-      warning_duration: 30,
+      microbreakInterval: 100,
+      microbreakDuration: 20,
+      microbreakEnabled: true,
+      restInterval: 2000,
+      restDuration: 500,
+      restEnabled: true,
+      dailyLimit: 4000,
+      dailyEnabled: false,
+      warningDuration: 30,
       mode: "Normal",
     };
 
@@ -87,21 +87,21 @@ describe("Settings", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stored = await mockStore.get<any>("break_config");
       expect(stored).toBeTruthy();
-      expect(stored.microbreak_interval).toBe(100);
+      expect(stored.microbreakInterval).toBe(100);
     });
   });
 
   it("loads settings from store on mount if available", async () => {
     const storedConfig = {
-      microbreak_interval: 250,
-      microbreak_duration: 45,
-      microbreak_enabled: true,
-      rest_interval: 3000,
-      rest_duration: 700,
-      rest_enabled: true,
-      daily_limit: 7200, // 2 hours
-      daily_enabled: true,
-      warning_duration: 30,
+      microbreakInterval: 250,
+      microbreakDuration: 45,
+      microbreakEnabled: true,
+      restInterval: 3000,
+      restDuration: 700,
+      restEnabled: true,
+      dailyLimit: 7200, // 2 hours
+      dailyEnabled: true,
+      warningDuration: 30,
       mode: "Quiet",
     };
 
@@ -113,7 +113,7 @@ describe("Settings", () => {
       if (cmd === "get_settings")
         return Promise.resolve({
           ...storedConfig,
-          microbreak_interval: 180,
+          microbreakInterval: 180,
           mode: "Normal",
         });
       return Promise.resolve();
