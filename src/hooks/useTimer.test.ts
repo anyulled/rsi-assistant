@@ -1,25 +1,49 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "bun:test";
+import type { TimerStatus } from "../types";
 import { useTimer } from "./useTimer";
+
+// Expected default values that match the hook's DEFAULT_TIMER_STATUS
+const DEFAULT_STATUS: TimerStatus = {
+  dailyUsage: 0,
+  dailyLimit: 28800,
+  microActive: 0,
+  microTarget: 180,
+  microIsOverdue: false,
+  restActive: 0,
+  restTarget: 2700,
+  restIsOverdue: false,
+  currentIdle: 0,
+  mode: "Normal",
+  breakType: null,
+  breakDuration: 0,
+  breakElapsed: 0,
+};
 
 describe("useTimer", () => {
   beforeEach(() => {
-    // Reset mocks to default implementation before each test
+    // Reset mocks before each test
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (invoke as any).mockReset();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (listen as any).mockReset();
+
+    // Default implementations
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation(() => Promise.resolve(null));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (listen as any).mockImplementation(() => Promise.resolve(() => {}));
   });
 
-  it("initializes with null status", () => {
+  it("initializes with default status (not null)", () => {
     const { result } = renderHook(() => useTimer());
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual(DEFAULT_STATUS);
   });
 
-  it("fetches initial status on mount", async () => {
-    const mockStatus = {
+  it("updates status when backend returns data", async () => {
+    const backendStatus: TimerStatus = {
       dailyUsage: 100,
       dailyLimit: 28800,
       microActive: 50,
@@ -35,28 +59,25 @@ describe("useTimer", () => {
       breakElapsed: 0,
     };
 
-    // Actually, let's just make sure we match what we check in toEqual
-    const adjustedMockStatus = { ...mockStatus };
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation((cmd: string) => {
-      if (cmd === "get_timer_state") return Promise.resolve(adjustedMockStatus);
+      if (cmd === "get_timer_state") return Promise.resolve(backendStatus);
       return Promise.resolve(null);
     });
 
     const { result } = renderHook(() => useTimer());
 
     await waitFor(() => {
-      expect(result.current).toEqual(mockStatus);
+      expect(result.current).toEqual(backendStatus);
     });
 
     expect(invoke).toHaveBeenCalledWith("get_timer_state");
   });
 
   it("updates status on timer-update event", async () => {
-    let eventHandler: ((event: { payload: unknown }) => void) | undefined;
+    let eventHandler: ((event: { payload: TimerStatus }) => void) | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (listen as any).mockImplementation((event: string, handler: (event: { payload: unknown }) => void) => {
+    (listen as any).mockImplementation((event: string, handler: (event: { payload: TimerStatus }) => void) => {
       if (event === "timer-update") {
         eventHandler = handler;
       }
@@ -65,7 +86,7 @@ describe("useTimer", () => {
 
     renderHook(() => useTimer());
 
-    const newStatus = {
+    const newStatus: TimerStatus = {
       dailyUsage: 101,
       dailyLimit: 28800,
       microActive: 51,
@@ -82,15 +103,10 @@ describe("useTimer", () => {
     };
 
     // Simulate event
-    await waitFor(() => {
+    await act(async () => {
       if (eventHandler) eventHandler({ payload: newStatus });
     });
 
-    // This is a bit tricky with async updates in hooks, usually waitFor helps
-    // But since we control the handler, we might need act/waitFor
-
-    // Since we can't easily trigger the listen callback from outside without hacking the mock implementation better,
-    // The fact that 'listen' is called is a good start.
     expect(listen).toHaveBeenCalledWith("timer-update", expect.any(Function));
   });
 });
