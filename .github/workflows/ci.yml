@@ -31,7 +31,7 @@ jobs:
           echo "$COVERAGE_OUTPUT"
 
           # Extract coverage percentage from "All files" line
-          COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "All files" | awk '{print $3}' | sed 's/%//')
+          COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "All files" | awk '{print $4}' | sed 's/%//')
           echo "Frontend coverage: $COVERAGE%"
 
           if [ -z "$COVERAGE" ]; then
