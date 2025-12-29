@@ -97,9 +97,9 @@ pub fn set_mode(app: tauri::AppHandle, state: State<AppState>, mode: String) -> 
 
     service.set_mode(operation_mode);
 
-    // Emit event for the backend (e.g. tray listener) to pick up
-    // We send just the mode string
-    let _ = app.emit("app-mode-changed", &mode);
+    if let Err(e) = app.emit("app-mode-changed", &mode) {
+        eprintln!("Failed to emit mode-changed event: {}", e);
+    }
 
     Ok(())
 }

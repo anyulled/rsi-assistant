@@ -175,9 +175,7 @@ describe("Settings", () => {
     expect(eventCallback).toBeDefined();
 
     // 4. Simulate event
-    await waitFor(() => {
-      if (eventCallback) eventCallback({ payload: "Reading" });
-    });
+    if (eventCallback) eventCallback({ payload: "Reading" });
 
     // 5. Assert mode updated to "Reading"
     await waitFor(() => {

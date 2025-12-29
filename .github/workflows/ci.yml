@@ -27,6 +27,19 @@ jobs:
       - name: Run frontend tests
         run: bun run test
 
+      - name: Run frontend tests with coverage
+        run: bun test --coverage ./src
+
+      - name: Check frontend coverage threshold
+        run: |
+          COVERAGE=$(bun test --coverage ./src 2>&1 | grep "All files" | awk '{print $3}' | sed 's/%//')
+          echo "Frontend coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Frontend coverage ($COVERAGE%) is below 80% threshold"
+            exit 1
+          fi
+          echo "✅ Frontend coverage ($COVERAGE%) meets 80% threshold"
+
       - name: Lint frontend
         run: bunx eslint . --ext .js,.ts,.tsx
 
@@ -42,11 +55,12 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1.0.7
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
-          components: clippy
+          components: clippy, llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
 
       - name: Build Rust backend
         run: cargo build --release
@@ -54,6 +68,21 @@ jobs:
 
       - name: Run Rust tests
         run: cargo test --release
+        working-directory: src-tauri
+
+      - name: Run Rust tests with coverage
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+        working-directory: src-tauri
+
+      - name: Check Rust coverage threshold
+        run: |
+          COVERAGE=$(cargo llvm-cov --all-features --workspace | grep "TOTAL" | awk '{print $10}' | sed 's/%//')
+          echo "Rust coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Rust coverage ($COVERAGE%) is below 80% threshold"
+            exit 1
+          fi
+          echo "✅ Rust coverage ($COVERAGE%) meets 80% threshold"
         working-directory: src-tauri
 
       - name: Lint Rust code (clippy)

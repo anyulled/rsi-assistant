@@ -77,10 +77,20 @@ export function Settings() {
       try {
         unlisten = await listen<string>("app-mode-changed", (event) => {
           console.log("[Settings] Received mode change event:", event.payload);
+          const newMode = event.payload;
+
+          // Validate that the received mode is one of the expected values
+          const validModes: OperationMode[] = ["Normal", "Quiet", "Suspended", "Reading"];
+          if (!validModes.includes(newMode as OperationMode)) {
+            console.error("[Settings] Received invalid mode from event:", newMode);
+            return;
+          }
+
           setConfig((prev) => {
             if (!prev) return prev;
-            console.log("[Settings] Updating config mode from", prev.mode, "to", event.payload);
-            return { ...prev, mode: event.payload as OperationMode };
+            if (prev.mode === newMode) return prev; // No change needed
+            console.log("[Settings] Updating config mode from", prev.mode, "to", newMode);
+            return { ...prev, mode: newMode as OperationMode };
           });
         });
         console.log("[Settings] Listener registered successfully");

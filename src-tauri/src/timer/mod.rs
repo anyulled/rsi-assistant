@@ -20,8 +20,8 @@ pub enum BreakType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BreakConfig {
-    pub microbreak_interval: u64, // seconds of activity
-    pub microbreak_duration: u64, // seconds of idle required
+    pub microbreak_interval: u64,
+    pub microbreak_duration: u64,
     pub microbreak_enabled: bool,
 
     pub rest_interval: u64,
@@ -38,15 +38,15 @@ pub struct BreakConfig {
 impl Default for BreakConfig {
     fn default() -> Self {
         Self {
-            microbreak_interval: 180, // 3 min
+            microbreak_interval: 180,
             microbreak_duration: 30,
             microbreak_enabled: true,
 
-            rest_interval: 2700, // 45 min
-            rest_duration: 600,  // 10 min
+            rest_interval: 2700,
+            rest_duration: 600,
             rest_enabled: true,
 
-            daily_limit: 28800, // 8 hours
+            daily_limit: 28800,
             daily_enabled: true,
 
             warning_duration: 30,
@@ -73,7 +73,6 @@ pub struct TimerStatus {
 
     pub mode: OperationMode,
 
-    // Active break state
     pub break_type: Option<BreakType>,
     pub break_duration: u64,
     pub break_elapsed: u64,
@@ -88,7 +87,6 @@ pub struct TimerService {
 
     pub current_idle: u64,
 
-    // Active break tracking
     break_in_progress: Option<BreakType>,
     break_started_at: Option<Instant>,
 }
@@ -121,19 +119,16 @@ impl TimerService {
         if effective_idle {
             self.current_idle = self.current_idle.saturating_add(1);
 
-            // Check if microbreak should be cleared
+            // Reset the timers when a successful break period (inactivity) has passed.
             if self.config.microbreak_enabled
                 && self.current_idle >= self.config.microbreak_duration
             {
-                // If we were accumulating active time, reset it
                 if self.micro_active > 0 {
                     self.micro_active = 0;
-                    // Note: In a real app, we might want to "cap" the idle at duration
-                    // or let it grow. Green bar usually fills then stops?
+                    // Keep track of idle growth beyond the limit for potential future UI indicators.
                 }
             }
 
-            // Check if rest break should be cleared
             if self.config.rest_enabled
                 && self.current_idle >= self.config.rest_duration
                 && self.rest_active > 0
@@ -141,7 +136,6 @@ impl TimerService {
                 self.rest_active = 0;
             }
         } else {
-            // User Active
             self.current_idle = 0;
             self.daily_usage = self.daily_usage.saturating_add(1);
 
@@ -160,7 +154,6 @@ impl TimerService {
 
     pub fn reset_microbreak(&mut self) {
         self.micro_active = 0;
-        // Clear break state if micro break was in progress
         if self.break_in_progress == Some(BreakType::Micro) {
             self.break_in_progress = None;
             self.break_started_at = None;
@@ -169,7 +162,6 @@ impl TimerService {
 
     pub fn reset_rest_break(&mut self) {
         self.rest_active = 0;
-        // Clear break state if rest break was in progress
         if self.break_in_progress == Some(BreakType::Rest) {
             self.break_in_progress = None;
             self.break_started_at = None;
@@ -181,15 +173,14 @@ impl TimerService {
     }
 
     pub fn trigger_rest_break(&mut self) {
-        // Set active time just above the interval to trigger 'overdue' logic
-        // The actual overlay logic depends on the frontend seeing 'rest_is_overdue'
+        // Exceed the interval slightly to force the 'overdue' UI state and triggers.
         self.rest_active = self.config.rest_interval + 1;
         // Start the break immediately
         self.start_break(BreakType::Rest);
     }
 
     pub fn trigger_microbreak(&mut self) {
-        // Set active time just above the interval to trigger 'overdue' logic
+        // Exceed the interval slightly to force the 'overdue' UI state and triggers.
         self.micro_active = self.config.microbreak_interval + 1;
         // Start the break immediately
         self.start_break(BreakType::Micro);

@@ -25,11 +25,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Initialize services
             let idle_detector = match DeviceQueryIdleDetector::new() {
                 Ok(detector) => detector,
                 Err(err_msg) => {
-                    // Show a user-friendly dialog explaining the issue
+                    // Notify the user about missing permissions so they know how to fix it and why the app is stopping.
                     use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
                     use tauri_plugin_opener::OpenerExt;
 
@@ -45,8 +44,6 @@ pub fn run() {
                     );
 
                     let app_handle = app.handle().clone();
-
-                    // Show dialog in blocking mode
                     tauri::async_runtime::block_on(async move {
                         let result = app_handle
                             .dialog()
@@ -60,8 +57,6 @@ pub fn run() {
                             .blocking_show();
 
                         if result {
-                            // User clicked "Open Settings"
-                            // Open System Settings to Accessibility pane
                             let _ = app_handle.opener().open_url(
                                 "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
                                 None::<&str>,
@@ -79,17 +74,13 @@ pub fn run() {
 
             let timer_service = TimerService::new(BreakConfig::default());
 
-            // Manage state
             app.manage(AppState {
                 timer_service: Mutex::new(timer_service),
                 stats_store: Mutex::new(StatsStore::default()),
             });
 
-            // System Tray Setup - Comprehensive Menu
             use tauri::menu::CheckMenuItem;
             use tauri_plugin_dialog::DialogExt;
-
-            // System Tray Setup - Comprehensive Menu
             // TODO: Use IconMenuItem once we have distinct icons. For now using standard MenuItem with placeholders where icons would be.
             let show_i = MenuItem::with_id(app, "show", "Show RSI Assistant", true, None::<&str>)?;
             let rest_break_i =
@@ -98,8 +89,7 @@ pub fn run() {
             let statistics_i =
                 MenuItem::with_id(app, "statistics", "Statistics", true, None::<&str>)?;
 
-            // Operation Mode submenu
-            // Default to Normal being checked
+            // Start in Normal mode as the default behavior.
             let mode_normal_i =
                 CheckMenuItem::with_id(app, "mode_normal", "Normal", true, true, None::<&str>)?;
             let mode_quiet_i =
@@ -155,13 +145,11 @@ pub fn run() {
                 ],
             )?;
 
-            // Capture handles for event closure
             let mode_normal_handle = mode_normal_i.clone();
             let mode_quiet_handle = mode_quiet_i.clone();
             let mode_suspended_handle = mode_suspended_i.clone();
             let mode_reading_handle = mode_reading_i.clone();
 
-            // Clones for the global event listener
             let mode_normal_handle_l = mode_normal_i.clone();
             let mode_quiet_handle_l = mode_quiet_i.clone();
             let mode_suspended_handle_l = mode_suspended_i.clone();
@@ -190,12 +178,11 @@ pub fn run() {
                                 A tool to help you prevent Repetitive Strain Injury by \
                                 reminding you to take regular breaks and providing exercises.\n\n\
                                 Version: {}\n\
-                                Developer: {}\n\
+                                Developer: Anyul Rivas\n\
                                 License: MIT\n\
                                 Copyright © {} Anyul Rivas\n\n\
                                 Built with Tauri and Rust",
-                                env!("CARGO_PKG_VERSION"),
-                                env!("CARGO_PKG_AUTHORS"),
+                                app.package_info().version,
                                 chrono::Utc::now().year()
                             );
                             let _ = app.dialog().message(about_message);
@@ -279,47 +266,19 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Listen for mode changes from the frontend (or elsewhere) to sync the tray menu
+            // Keep the tray menu in sync with mode changes made from the settings UI.
             app.listen("app-mode-changed", move |event| {
                 if let Ok(mode_str) = serde_json::from_str::<String>(event.payload()) {
-                     match mode_str.as_str() {
-                        "Normal" => {
-                            let _ = mode_normal_handle_l.set_checked(true);
-                            let _ = mode_quiet_handle_l.set_checked(false);
-                            let _ = mode_suspended_handle_l.set_checked(false);
-                            let _ = mode_reading_handle_l.set_checked(false);
-                        }
-                        "Quiet" => {
-                            let _ = mode_normal_handle_l.set_checked(false);
-                            let _ = mode_quiet_handle_l.set_checked(true);
-                            let _ = mode_suspended_handle_l.set_checked(false);
-                            let _ = mode_reading_handle_l.set_checked(false);
-                        }
-                        "Suspended" => {
-                            let _ = mode_normal_handle_l.set_checked(false);
-                            let _ = mode_quiet_handle_l.set_checked(false);
-                            let _ = mode_suspended_handle_l.set_checked(true);
-                            let _ = mode_reading_handle_l.set_checked(false);
-                        }
-                        "Reading" => {
-                            let _ = mode_normal_handle_l.set_checked(false);
-                            let _ = mode_quiet_handle_l.set_checked(false);
-                            let _ = mode_suspended_handle_l.set_checked(false);
-                            let _ = mode_reading_handle_l.set_checked(true);
-                        }
-                        _ => {}
-                     }
+                    let _ = mode_normal_handle_l.set_checked(mode_str == "Normal");
+                    let _ = mode_quiet_handle_l.set_checked(mode_str == "Quiet");
+                    let _ = mode_suspended_handle_l.set_checked(mode_str == "Suspended");
+                    let _ = mode_reading_handle_l.set_checked(mode_str == "Reading");
                 }
             });
 
-            // Clone handle for background task
             let handle = app.handle().clone();
 
             use tauri_plugin_notification::NotificationExt;
-
-            // ... imports ...
-
-            // ... inside run() setup ...
 
             // Spawn background task
             tauri::async_runtime::spawn(async move {
@@ -332,15 +291,13 @@ pub fn run() {
                     sleep(Duration::from_secs(1)).await;
 
                     let idle_seconds = idle_detector.get_seconds_since_last_input();
-                    let is_idle = idle_seconds > 5; // Simple threshold
+                    let is_idle = idle_seconds > 5; // Prevent flickering by requiring sustained inactivity.
 
-                    // First, tick and check if we need to start a break
                     let status = {
                         let state = handle.state::<AppState>();
                         let mut service = state.timer_service.lock().unwrap();
                         service.tick(is_idle);
 
-                        // Auto-start break if overdue but not yet started
                         let preliminary_status = service.get_status();
                         if (preliminary_status.micro_is_overdue
                             || preliminary_status.rest_is_overdue)
@@ -353,10 +310,8 @@ pub fn run() {
                             }
                         }
 
-                        // Now get the final status (with break state included)
                         let status = service.get_status();
 
-                        // Update statistics with current usage
                         let mut stats = state.stats_store.lock().unwrap();
                         let today = stats.get_or_create_today();
                         today.total_usage_seconds = status.daily_usage;
@@ -364,7 +319,6 @@ pub fn run() {
                         status
                     };
 
-                    // Notifications
                     if status.micro_is_overdue && !was_micro_overdue {
                         let _ = handle
                             .notification()
@@ -384,7 +338,6 @@ pub fn run() {
                     was_micro_overdue = status.micro_is_overdue;
                     was_rest_overdue = status.rest_is_overdue;
 
-                    // Log what we're about to emit
                     if status.break_type.is_some() || status.micro_is_overdue || status.rest_is_overdue {
                         println!(
                             "[DEBUG] Emitting timer-update: break_type={:?}, break_duration={}, break_elapsed={}",
@@ -392,12 +345,10 @@ pub fn run() {
                         );
                     }
 
-                    // Emit event to frontend
                     if let Err(e) = handle.emit("timer-update", status) {
                         eprintln!("Failed to emit timer update: {}", e);
                     }
 
-                    // Manage Overlay Window
                     if let Some(overlay) = handle.get_webview_window("overlay") {
                         // Show overlay when a break is in progress
                         let should_show = status.break_type.is_some();
