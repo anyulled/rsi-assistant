@@ -12,7 +12,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Listener, Manager};
 use tokio::time::sleep;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -112,12 +112,25 @@ pub fn run() {
                 false,
                 None::<&str>,
             )?;
+            let mode_reading_i = CheckMenuItem::with_id(
+                app,
+                "mode_reading",
+                "Reading",
+                true,
+                false,
+                None::<&str>,
+            )?;
 
             let mode_submenu = Submenu::with_items(
                 app,
                 "Mode",
                 true,
-                &[&mode_normal_i, &mode_quiet_i, &mode_suspended_i],
+                &[
+                    &mode_normal_i,
+                    &mode_quiet_i,
+                    &mode_suspended_i,
+                    &mode_reading_i,
+                ],
             )?;
 
             let preferences_i =
@@ -146,6 +159,13 @@ pub fn run() {
             let mode_normal_handle = mode_normal_i.clone();
             let mode_quiet_handle = mode_quiet_i.clone();
             let mode_suspended_handle = mode_suspended_i.clone();
+            let mode_reading_handle = mode_reading_i.clone();
+
+            // Clones for the global event listener
+            let mode_normal_handle_l = mode_normal_i.clone();
+            let mode_quiet_handle_l = mode_quiet_i.clone();
+            let mode_suspended_handle_l = mode_suspended_i.clone();
+            let mode_reading_handle_l = mode_reading_i.clone();
 
             let _tray = TrayIconBuilder::with_id("tray")
                 .menu(&menu)
@@ -218,6 +238,8 @@ pub fn run() {
                             let _ = mode_normal_handle.set_checked(true);
                             let _ = mode_quiet_handle.set_checked(false);
                             let _ = mode_suspended_handle.set_checked(false);
+                            let _ = mode_reading_handle.set_checked(false);
+                            let _ = app.emit("app-mode-changed", "Normal");
                         }
                         "mode_quiet" => {
                             let state = app.state::<AppState>();
@@ -227,6 +249,8 @@ pub fn run() {
                             let _ = mode_normal_handle.set_checked(false);
                             let _ = mode_quiet_handle.set_checked(true);
                             let _ = mode_suspended_handle.set_checked(false);
+                            let _ = mode_reading_handle.set_checked(false);
+                            let _ = app.emit("app-mode-changed", "Quiet");
                         }
                         "mode_suspended" => {
                             let state = app.state::<AppState>();
@@ -236,11 +260,57 @@ pub fn run() {
                             let _ = mode_normal_handle.set_checked(false);
                             let _ = mode_quiet_handle.set_checked(false);
                             let _ = mode_suspended_handle.set_checked(true);
+                            let _ = mode_reading_handle.set_checked(false);
+                            let _ = app.emit("app-mode-changed", "Suspended");
+                        }
+                        "mode_reading" => {
+                            let state = app.state::<AppState>();
+                            let mut service = state.timer_service.lock().unwrap();
+                            service.set_mode(timer::OperationMode::Reading);
+
+                            let _ = mode_normal_handle.set_checked(false);
+                            let _ = mode_quiet_handle.set_checked(false);
+                            let _ = mode_suspended_handle.set_checked(false);
+                            let _ = mode_reading_handle.set_checked(true);
+                            let _ = app.emit("app-mode-changed", "Reading");
                         }
                         _ => {}
                     }
                 })
                 .build(app)?;
+
+            // Listen for mode changes from the frontend (or elsewhere) to sync the tray menu
+            app.listen("app-mode-changed", move |event| {
+                if let Ok(mode_str) = serde_json::from_str::<String>(event.payload()) {
+                     match mode_str.as_str() {
+                        "Normal" => {
+                            let _ = mode_normal_handle_l.set_checked(true);
+                            let _ = mode_quiet_handle_l.set_checked(false);
+                            let _ = mode_suspended_handle_l.set_checked(false);
+                            let _ = mode_reading_handle_l.set_checked(false);
+                        }
+                        "Quiet" => {
+                            let _ = mode_normal_handle_l.set_checked(false);
+                            let _ = mode_quiet_handle_l.set_checked(true);
+                            let _ = mode_suspended_handle_l.set_checked(false);
+                            let _ = mode_reading_handle_l.set_checked(false);
+                        }
+                        "Suspended" => {
+                            let _ = mode_normal_handle_l.set_checked(false);
+                            let _ = mode_quiet_handle_l.set_checked(false);
+                            let _ = mode_suspended_handle_l.set_checked(true);
+                            let _ = mode_reading_handle_l.set_checked(false);
+                        }
+                        "Reading" => {
+                            let _ = mode_normal_handle_l.set_checked(false);
+                            let _ = mode_quiet_handle_l.set_checked(false);
+                            let _ = mode_suspended_handle_l.set_checked(false);
+                            let _ = mode_reading_handle_l.set_checked(true);
+                        }
+                        _ => {}
+                     }
+                }
+            });
 
             // Clone handle for background task
             let handle = app.handle().clone();

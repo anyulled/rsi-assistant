@@ -1,7 +1,7 @@
 use crate::stats::{DailyStats, StatsStore};
 use crate::timer::{BreakConfig, TimerService, TimerStatus};
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Emitter, State};
 
 // AppState definition
 pub struct AppState {
@@ -84,17 +84,23 @@ pub fn reset_break(state: State<AppState>, break_type: String) -> Result<(), Str
 }
 
 #[tauri::command]
-pub fn set_mode(state: State<AppState>, mode: String) -> Result<(), String> {
+pub fn set_mode(app: tauri::AppHandle, state: State<AppState>, mode: String) -> Result<(), String> {
     let mut service = state.timer_service.lock().unwrap();
 
     let operation_mode = match mode.as_str() {
         "Normal" => crate::timer::OperationMode::Normal,
         "Quiet" => crate::timer::OperationMode::Quiet,
         "Suspended" => crate::timer::OperationMode::Suspended,
+        "Reading" => crate::timer::OperationMode::Reading,
         _ => return Err("Invalid mode".to_string()),
     };
 
     service.set_mode(operation_mode);
+
+    // Emit event for the backend (e.g. tray listener) to pick up
+    // We send just the mode string
+    let _ = app.emit("app-mode-changed", &mode);
+
     Ok(())
 }
 

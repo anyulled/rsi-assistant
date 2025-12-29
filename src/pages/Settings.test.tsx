@@ -144,4 +144,46 @@ describe("Settings", () => {
       expect(grid).toBeInTheDocument();
     });
   });
+
+  it("updates mode when 'app-mode-changed' event is received", async () => {
+    // 1. Setup mock to capture the event listener callback
+    let eventCallback: ((event: { payload: string }) => void) | undefined;
+
+    // We need to remock listen for this specific test
+    const { listen } = await import("@tauri-apps/api/event");
+
+    type MockImpl = (event: string, cb: (event: { payload: string }) => void) => Promise<() => void>;
+    type MockListen = { mockImplementation: (impl: MockImpl) => void };
+
+    (listen as unknown as MockListen).mockImplementation((event, cb) => {
+      if (event === "app-mode-changed") {
+        eventCallback = cb;
+      }
+      return Promise.resolve(() => {});
+    });
+
+    // 2. Render component
+    const { baseElement } = render(<Settings />);
+    const screen = within(baseElement);
+
+    // Initial load finishes
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Normal")).toBeInTheDocument();
+    });
+
+    // 3. Verify listener was registered
+    expect(eventCallback).toBeDefined();
+
+    // 4. Simulate event
+    await waitFor(() => {
+      if (eventCallback) eventCallback({ payload: "Reading" });
+    });
+
+    // 5. Assert mode updated to "Reading"
+    await waitFor(() => {
+      const modeSelect = screen.getByDisplayValue("Reading") as HTMLSelectElement;
+      expect(modeSelect).toBeInTheDocument();
+      expect(modeSelect.value).toBe("Reading");
+    });
+  });
 });

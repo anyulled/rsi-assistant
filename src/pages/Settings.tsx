@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { load } from "@tauri-apps/plugin-store";
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import type { BreakConfig } from "../types";
+import type { BreakConfig, OperationMode } from "../types";
 
 const SETTINGS_STORE = "settings.json";
 const SETTINGS_KEY = "break_config";
@@ -66,6 +67,31 @@ export function Settings() {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  // Listen for mode changes from system tray or other sources
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    const setupListener = async () => {
+      try {
+        unlisten = await listen<string>("app-mode-changed", (event) => {
+          console.log("Settings: Received mode change event", event.payload);
+          setConfig((prev) => {
+            if (!prev) return prev;
+            return { ...prev, mode: event.payload as OperationMode };
+          });
+        });
+      } catch (err) {
+        console.error("Failed to setup mode listener:", err);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, type, checked, value } = e.target as HTMLInputElement;
@@ -238,6 +264,7 @@ export function Settings() {
               <option value="Normal">Normal</option>
               <option value="Quiet">Quiet</option>
               <option value="Suspended">Suspended</option>
+              <option value="Reading">Reading</option>
             </select>
           </label>
         </div>

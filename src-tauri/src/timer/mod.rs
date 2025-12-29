@@ -7,6 +7,7 @@ pub enum OperationMode {
     Normal,
     Quiet,
     Suspended,
+    Reading,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -110,7 +111,14 @@ impl TimerService {
             return;
         }
 
-        if is_idle {
+        // In Reading mode, we treat idle time as active work time (for reading docs, etc.)
+        // So we override 'is_idle' to false if in Reading mode and actually idle.
+        // However, we still need to decide if we want to reset current_idle.
+        // If we want timers to run, we should basically behave as if !is_idle.
+        let effective_idle =
+            if self.config.mode == OperationMode::Reading { false } else { is_idle };
+
+        if effective_idle {
             self.current_idle = self.current_idle.saturating_add(1);
 
             // Check if microbreak should be cleared
@@ -381,5 +389,22 @@ mod tests {
 
         service.set_mode(OperationMode::Normal);
         assert_eq!(service.config.mode, OperationMode::Normal);
+    }
+
+    #[test]
+    fn test_reading_mode_accumulates_on_idle() {
+        let mut config = BreakConfig::default();
+        config.mode = OperationMode::Reading;
+        let mut service = TimerService::new(config);
+
+        // Tick with is_idle = true
+        for _ in 0..10 {
+            service.tick(true);
+        }
+
+        // Should accumulate active time despite being "idle" (no input)
+        assert_eq!(service.daily_usage, 10);
+        assert_eq!(service.micro_active, 10);
+        assert_eq!(service.current_idle, 0); // Should be 0 because we treated it as active
     }
 }
