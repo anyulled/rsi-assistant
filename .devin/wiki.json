@@ -1,0 +1,304 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "Introduce the RSI Assistant application, its purpose for preventing repetitive strain injury, and provide a high-level architectural overview of the Tauri-based desktop application",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Guide developers through setting up the development environment, installing dependencies, and running the application for the first time",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "High-Level Architecture",
+      "purpose": "Explain the three-tier architecture (Frontend/Tauri IPC/Backend), the tech stack choices (React, Rust, Tauri), and how the components communicate",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Frontend Architecture",
+      "purpose": "Comprehensive documentation of the React/TypeScript frontend, including component structure, state management patterns, and UI implementation",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Main Application Component",
+      "purpose": "Document the App.tsx component, its tab-based navigation system, window context detection (main vs overlay), and event handling for backend navigation",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Timer Display Component",
+      "purpose": "Explain the TimerDisplay component's circular progress indicators, time formatting, overdue state visualization, and manual break trigger functionality",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Break Overlay System",
+      "purpose": "Document the BreakOverlay component's modal interface, automatic completion logic, skip functionality, and IPC interactions for recording break events",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Settings Interface",
+      "purpose": "Describe the Settings component's form handling, multi-source configuration loading (local store → backend → defaults), immediate mode updates, and persistence strategy",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Statistics Dashboard",
+      "purpose": "Document the Statistics component's data visualization using Recharts, calendar navigation with react-calendar, break metrics tables, and historical data display",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "State Management with useTimer Hook",
+      "purpose": "Deep dive into the useTimer hook's implementation, its initialization via get_timer_state, real-time updates via timer-update events, and null state handling during loading",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Styling System",
+      "purpose": "Explain the Tailwind CSS configuration, utility-first approach, custom CSS properties for theming, responsive design patterns, and dark mode support",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Type Definitions",
+      "purpose": "Document the core TypeScript interfaces (TimerStatus, BreakConfig, OperationMode, BreakType) that define the data contracts between frontend and backend",
+      "parent": "Frontend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Backend Architecture",
+      "purpose": "Comprehensive documentation of the Rust backend, including core services, timer logic, idle detection, and statistics management",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Application Entry Point and Initialization",
+      "purpose": "Document lib.rs setup function, plugin initialization, permission checks for IdleDetector, system tray menu creation, and background task spawning",
+      "parent": "Backend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "TimerService: Core Timer Logic",
+      "purpose": "Explain TimerService's tick mechanism, BreakConfig parameters, OperationMode state machine (Normal/Quiet/Suspended), break target tracking, and overdue detection algorithms",
+      "parent": "Backend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Idle Detection System",
+      "purpose": "Document the IdleDetector trait, DeviceQueryIdleDetector implementation with background polling thread, accessibility permission requirements, and input device monitoring",
+      "parent": "Backend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Statistics Store",
+      "purpose": "Describe StatsStore's DailyStats structure, metrics tracking (prompted/natural/skipped/postponed for each break type), persistence strategy, and historical queries",
+      "parent": "Backend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Background Task and Event Loop",
+      "purpose": "Detail the 1-second polling loop, coordination between IdleDetector/TimerService/StatsStore, auto-break triggering logic, notification sending, and timer-update event emission",
+      "parent": "Backend Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Tauri Integration Layer",
+      "purpose": "Document the IPC bridge between frontend and backend, including command invocation patterns, event streaming, and Tauri plugin usage",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Command API (IPC)",
+      "purpose": "List and document all Tauri commands in commands.rs: get_timer_state, update_settings, get_settings, get_statistics, record_break_taken, record_break_postponed, reset_break, set_mode, trigger_break",
+      "parent": "Tauri Integration Layer",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Event System",
+      "purpose": "Document the timer-update event stream, navigate-to events for view switching, and event listener patterns in the frontend",
+      "parent": "Tauri Integration Layer",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Window Management",
+      "purpose": "Explain main vs overlay window contexts, window show/hide/focus operations, always-on-top behavior for break overlays, and window label detection",
+      "parent": "Tauri Integration Layer",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Tauri Plugins",
+      "purpose": "Document the usage of plugin-store for persistent configuration, plugin-notification for system alerts, plugin-autostart for OS startup, plugin-fs for file operations, and plugin-opener",
+      "parent": "Tauri Integration Layer",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "System Tray Integration",
+      "purpose": "Document system tray menu structure, menu event handling, mode switching submenu, manual break triggers, and navigation-to events",
+      "parent": "Tauri Integration Layer",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Capabilities and Permissions",
+      "purpose": "Explain Tauri's capability system, the default.json configuration granting permissions to main/overlay windows, and the security model",
+      "parent": "Tauri Integration Layer",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Data Flow and State Synchronization",
+      "purpose": "Explain how data flows through the application, from configuration loading through runtime state updates to statistics persistence.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Configuration Management",
+      "purpose": "Detail the three-tier configuration precedence (local store → backend → defaults), Settings component's load/save flow, and immediate vs batch updates",
+      "parent": "Data Flow and State Synchronization",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Real-Time Timer Updates",
+      "purpose": "Trace the path of timer state from background task tick through TimerService.get_status() to timer-update event emission to useTimer hook to component rendering",
+      "parent": "Data Flow and State Synchronization",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Break Lifecycle State Management",
+      "purpose": "Document the complete lifecycle from Normal → Overdue → Active Break → Completion/Skip, including state transitions, notification triggers, and overlay visibility",
+      "parent": "Data Flow and State Synchronization",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Statistics Collection and Persistence",
+      "purpose": "Explain how break events are recorded, DailyStats accumulation during runtime, persistence to stats.json files, and historical data retrieval",
+      "parent": "Data Flow and State Synchronization",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
