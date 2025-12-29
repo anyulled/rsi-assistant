@@ -75,9 +75,10 @@ afterEach(() => {
   mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {
     switch (cmd) {
       case "get_timer_state":
-        return Promise.resolve(DEFAULT_TIMER_STATUS);
+        // Return a copy to prevent mutation issues, though strict mode + Object.freeze helps
+        return Promise.resolve({ ...DEFAULT_TIMER_STATUS });
       case "get_settings":
-        return Promise.resolve(DEFAULT_BREAK_CONFIG);
+        return Promise.resolve({ ...DEFAULT_BREAK_CONFIG });
       default:
         return Promise.resolve(null);
     }

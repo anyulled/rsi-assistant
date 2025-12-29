@@ -45,7 +45,8 @@ trap - ERR
 set +e
 
 echo "    Running tests..."
-bun test --coverage ./src > "$TEMP_OUTPUT" 2>&1
+# Run tests via package.json script
+bun run test:coverage > "$TEMP_OUTPUT" 2>&1
 TEST_EXIT_CODE=$?
 
 # Restore the ERR trap and error handling
@@ -70,9 +71,10 @@ echo "$COVERAGE_OUTPUT"
 echo ""
 echo "[4/5] Extracting coverage percentage..."
 
-# Extract coverage percentage from "All files" line using sed
+# Extract coverage percentage from "All files" line using awk
 # Format: "All files                        |   80.19 |   92.69 |"
-COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "All files" | sed 's/[^|]*|[^0-9]*\([0-9]*\.[0-9]*\).*/\1/')
+# We match the line starting with "All files" and print the 4th column (coverage %)
+COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "All files" | head -n 1 | awk -F'|' '{print $2}' | xargs)
 echo "Frontend coverage: ${COVERAGE}%"
 
 if [ -z "$COVERAGE" ]; then
