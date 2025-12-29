@@ -71,24 +71,28 @@ export function Settings() {
   // Listen for mode changes from system tray or other sources
   useEffect(() => {
     let unlisten: (() => void) | undefined;
+    console.log("[Settings] Setting up app-mode-changed listener...");
 
     const setupListener = async () => {
       try {
         unlisten = await listen<string>("app-mode-changed", (event) => {
-          console.log("Settings: Received mode change event", event.payload);
+          console.log("[Settings] Received mode change event:", event.payload);
           setConfig((prev) => {
             if (!prev) return prev;
+            console.log("[Settings] Updating config mode from", prev.mode, "to", event.payload);
             return { ...prev, mode: event.payload as OperationMode };
           });
         });
+        console.log("[Settings] Listener registered successfully");
       } catch (err) {
-        console.error("Failed to setup mode listener:", err);
+        console.error("[Settings] Failed to setup mode listener:", err);
       }
     };
 
     setupListener();
 
     return () => {
+      console.log("[Settings] Cleaning up app-mode-changed listener");
       if (unlisten) unlisten();
     };
   }, []);

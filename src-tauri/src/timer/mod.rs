@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum OperationMode {
     Normal,
     Quiet,
@@ -406,5 +406,44 @@ mod tests {
         assert_eq!(service.daily_usage, 10);
         assert_eq!(service.micro_active, 10);
         assert_eq!(service.current_idle, 0); // Should be 0 because we treated it as active
+    }
+
+    /// Integration test: Verify OperationMode serializes to PascalCase strings
+    /// that match the frontend TypeScript type definitions.
+    /// This prevents backend-frontend communication bugs due to case mismatches.
+    #[test]
+    fn test_operation_mode_serialization_contract() {
+        // These are the exact strings the frontend expects (src/types.ts: OperationMode)
+        let expected_modes = vec!["Normal", "Quiet", "Suspended", "Reading"];
+
+        let modes = vec![
+            OperationMode::Normal,
+            OperationMode::Quiet,
+            OperationMode::Suspended,
+            OperationMode::Reading,
+        ];
+
+        for (mode, expected) in modes.iter().zip(expected_modes.iter()) {
+            let serialized = serde_json::to_string(mode).unwrap();
+            // serde_json wraps strings in quotes, so we compare with quoted expected
+            assert_eq!(
+                serialized,
+                format!("\"{}\"", expected),
+                "OperationMode::{:?} should serialize to \"{}\" for frontend compatibility",
+                mode,
+                expected
+            );
+        }
+
+        // Also verify deserialization works with frontend strings
+        for (expected_mode, mode_str) in modes.iter().zip(expected_modes.iter()) {
+            let deserialized: OperationMode =
+                serde_json::from_str(&format!("\"{}\"", mode_str)).unwrap();
+            assert_eq!(
+                &deserialized, expected_mode,
+                "Frontend string \"{}\" should deserialize to OperationMode::{:?}",
+                mode_str, expected_mode
+            );
+        }
     }
 }
