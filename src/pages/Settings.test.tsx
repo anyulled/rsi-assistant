@@ -1,7 +1,7 @@
-import { fireEvent, render, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "../setupTests";
-import { FakeStore, clearStoreData, mockInvoke } from "../setupTests";
+import { FakeStore, clearStoreData, mockInvoke, mockListen } from "../setupTests";
 import { Settings } from "./Settings";
 
 // Mock the store module with a fresh store per test
@@ -135,8 +135,27 @@ describe("Settings", () => {
     const { baseElement } = render(<Settings />);
     const screen = within(baseElement);
 
+    // Verify initial state
     await waitFor(() => {
       expect(screen.getByDisplayValue("Normal")).toBeInTheDocument();
+    });
+
+    // Find the registered listener for 'app-mode-changed'
+    // mockListen calls are [eventName, callback]
+    const calls = mockListen.mock.calls;
+    const modeChangeCall = calls.find((call: unknown[]) => call[0] === "app-mode-changed");
+    expect(modeChangeCall).toBeDefined();
+
+    // Trigger the event
+    const callback = modeChangeCall![1] as (event: { payload: string }) => void;
+
+    await act(async () => {
+      callback({ payload: "Quiet" });
+    });
+
+    // Verify the UI updates to Reflect the new mode
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Quiet")).toBeInTheDocument();
     });
   });
 
