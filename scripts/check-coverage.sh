@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+# Navigate to project root (parent of scripts directory)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$SCRIPT_DIR/.."
+cd "$PROJECT_ROOT"
 
 # Frontend Coverage Check Script
 # This script runs frontend tests with coverage and enforces an 80% threshold
