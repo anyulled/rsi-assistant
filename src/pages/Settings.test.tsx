@@ -1,33 +1,8 @@
 import { fireEvent, render, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "../setupTests";
-import { clearStoreData, mockInvoke } from "../setupTests";
+import { FakeStore, clearStoreData, mockInvoke } from "../setupTests";
 import { Settings } from "./Settings";
-
-// Create a simple in-memory store for testing
-class FakeStore {
-  private data: Record<string, unknown> = {};
-
-  async get<T>(key: string): Promise<T | undefined> {
-    return this.data[key] as T | undefined;
-  }
-
-  async set(key: string, value: unknown): Promise<void> {
-    this.data[key] = value;
-  }
-
-  async save(): Promise<void> {
-    // No-op
-  }
-
-  async delete(key: string): Promise<void> {
-    delete this.data[key];
-  }
-
-  clear(): void {
-    this.data = {};
-  }
-}
 
 // Mock the store module with a fresh store per test
 let mockStore = new FakeStore();
@@ -162,6 +137,60 @@ describe("Settings", () => {
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Normal")).toBeInTheDocument();
+    });
+  });
+
+  it("handles input changes correctly", async () => {
+    const backendConfig = {
+      microbreakInterval: 180,
+      microbreakDuration: 30,
+      microbreakEnabled: true,
+      restInterval: 2700,
+      restDuration: 600,
+      restEnabled: true,
+      dailyLimit: 28800, // 8 hours
+      dailyEnabled: true,
+      warningDuration: 30,
+      mode: "Normal",
+    };
+
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_settings") return Promise.resolve(backendConfig);
+      // Mock set_mode invoke
+      if (cmd === "set_mode") return Promise.resolve(null);
+      return Promise.resolve(null);
+    });
+
+    const { baseElement } = render(<Settings />);
+    const screen = within(baseElement);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("180")).toBeInTheDocument();
+    });
+
+    // 1. Change number input
+    // Use name selector for robustness
+    const microInput = baseElement.querySelector('input[name="microbreakInterval"]')!;
+    fireEvent.change(microInput, { target: { value: "200" } });
+    expect(screen.getByDisplayValue("200")).toBeInTheDocument();
+
+    // 2. Change checkbox (microbreakEnabled)
+    const microCheckbox = baseElement.querySelector('input[name="microbreakEnabled"]') as HTMLInputElement;
+    fireEvent.click(microCheckbox);
+    expect(microCheckbox.checked).toBe(false);
+
+    // 3. Change Daily Limit (special conversion case)
+    const dailyInput = baseElement.querySelector('input[name="dailyLimit"]')!;
+    // Enter "9" hours
+    fireEvent.change(dailyInput, { target: { value: "9" } });
+    expect(screen.getByDisplayValue("9")).toBeInTheDocument();
+
+    // 4. Change Mode (should trigger invoke)
+    const modeSelect = baseElement.querySelector('select[name="mode"]')!;
+    fireEvent.change(modeSelect, { target: { value: "Reading" } });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("set_mode", { mode: "Reading" });
     });
   });
 });
