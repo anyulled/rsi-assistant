@@ -43,20 +43,34 @@ echo "    This may take several minutes on first run..."
 echo ""
 
 # Run coverage once and capture output (this also runs tests)
-# Don't use set -e here so we can capture the output even if it fails
-# Exclude integration files (lib.rs, main.rs) from coverage as they're not unit-testable
+# Use a temp file to handle large output and avoid subshell issues
+TEMP_OUTPUT=$(mktemp)
+
+# Disable the ERR trap temporarily to manually handle the exit code
+trap - ERR
 set +e
-COVERAGE_OUTPUT=$(cargo llvm-cov --all-features --workspace --ignore-filename-regex '(lib|main)\.rs' 2>&1)
+
+# Exclude integration files (lib.rs, main.rs) from coverage as they're not unit-testable
+echo "    Running cargo llvm-cov..."
+cargo llvm-cov --all-features --workspace --ignore-filename-regex '(lib|main)\.rs' > "$TEMP_OUTPUT" 2>&1
 COVERAGE_EXIT_CODE=$?
+
+# Restore the ERR trap and error handling
+trap 'echo ""; echo "❌ Script failed at line $LINENO with exit code $?"; exit 1' ERR
 set -e
+
+COVERAGE_OUTPUT=$(cat "$TEMP_OUTPUT")
+rm -f "$TEMP_OUTPUT"
 
 if [ $COVERAGE_EXIT_CODE -ne 0 ]; then
   echo "$COVERAGE_OUTPUT"
   echo ""
   echo "❌ cargo llvm-cov failed with exit code $COVERAGE_EXIT_CODE"
+  echo "See the output above for details."
   exit $COVERAGE_EXIT_CODE
 fi
 
+# Print output for visibility
 echo "$COVERAGE_OUTPUT"
 
 echo ""

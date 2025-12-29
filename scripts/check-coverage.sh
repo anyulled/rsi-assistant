@@ -37,19 +37,34 @@ echo "    This may take a minute..."
 echo ""
 
 # Run tests with coverage once and capture output
-# Don't use set -e here so we can capture the output even if it fails
+# Use a temp file to handle large output and avoid subshell issues
+TEMP_OUTPUT=$(mktemp)
+
+# Disable the ERR trap temporarily to manually handle the test exit code
+trap - ERR
 set +e
-COVERAGE_OUTPUT=$(bun test --coverage ./src 2>&1)
+
+echo "    Running tests..."
+bun test --coverage ./src > "$TEMP_OUTPUT" 2>&1
 TEST_EXIT_CODE=$?
+
+# Restore the ERR trap and error handling
+trap 'echo ""; echo "❌ Script failed at line $LINENO with exit code $?"; exit 1' ERR
 set -e
+
+COVERAGE_OUTPUT=$(cat "$TEMP_OUTPUT")
+rm -f "$TEMP_OUTPUT"
 
 if [ $TEST_EXIT_CODE -ne 0 ]; then
   echo "$COVERAGE_OUTPUT"
   echo ""
   echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
+  echo "See the output above for details."
   exit $TEST_EXIT_CODE
 fi
 
+# Print output for visibility (optional, or just summary?)
+# We print it so the user can see test results even on success
 echo "$COVERAGE_OUTPUT"
 
 echo ""
