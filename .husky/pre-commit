@@ -3,14 +3,13 @@ export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
 
 echo "🔍 Running pre-commit checks..."
 
-# Run ESLint with auto-fix on staged files
-echo "Running ESLint..."
-bun x eslint . --ext .js,.ts,.tsx --fix
+# Run lint-staged
+echo "Running lint-staged..."
+npx lint-staged
 
-# Run Prettier check
-echo "Running Prettier..."
-bun run format
-bun run format:check
+# Run frontend tests
+echo "Running frontend tests..."
+bun run test
 
 # Check Rust formatting
 echo "Checking Rust formatting..."

@@ -56,7 +56,7 @@ Documentation Tests:
 - Write code examples in /// comments
 - Cargo automatically tests doc examples
 - Ensure documentation stays up to date
-- Use ```rust,no_run or```rust,ignore when needed
+- Use `rust,no_run or`rust,ignore when needed
 
 Best Practices:
 
