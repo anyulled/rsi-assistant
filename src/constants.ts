@@ -1,6 +1,6 @@
 import type { BreakConfig, TimerStatus } from "./types";
 
-export const DEFAULT_TIMER_STATUS: TimerStatus = Object.freeze({
+export const getDefaultTimerStatus = (): TimerStatus => ({
   dailyUsage: 0,
   dailyLimit: 28800, // 8 hours default
   microActive: 0,
@@ -16,7 +16,7 @@ export const DEFAULT_TIMER_STATUS: TimerStatus = Object.freeze({
   breakElapsed: 0,
 });
 
-export const DEFAULT_BREAK_CONFIG: BreakConfig = Object.freeze({
+export const getDefaultBreakConfig = (): BreakConfig => ({
   microbreakInterval: 180,
   microbreakDuration: 20,
   restInterval: 2700,
@@ -28,3 +28,7 @@ export const DEFAULT_BREAK_CONFIG: BreakConfig = Object.freeze({
   warningDuration: 0,
   mode: "Normal",
 });
+
+// For backward compatibility until full refactor
+export const DEFAULT_TIMER_STATUS = Object.freeze(getDefaultTimerStatus());
+export const DEFAULT_BREAK_CONFIG = Object.freeze(getDefaultBreakConfig());

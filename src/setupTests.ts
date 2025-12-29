@@ -3,9 +3,9 @@ import { cleanup } from "@testing-library/react";
 import { afterEach, expect, mock } from "bun:test";
 import { Window } from "happy-dom";
 import {
-  DEFAULT_BREAK_CONFIG,
-  DEFAULT_TIMER_STATUS,
   clearStoreData,
+  getDefaultBreakConfig,
+  getDefaultTimerStatus,
   getStoreData,
   getWindowLabel,
   mockEmit,
@@ -75,10 +75,10 @@ afterEach(() => {
   mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {
     switch (cmd) {
       case "get_timer_state":
-        // Return a copy to prevent mutation issues, though strict mode + Object.freeze helps
-        return Promise.resolve({ ...DEFAULT_TIMER_STATUS });
+        // Return a fresh new object effectively
+        return Promise.resolve(getDefaultTimerStatus());
       case "get_settings":
-        return Promise.resolve({ ...DEFAULT_BREAK_CONFIG });
+        return Promise.resolve(getDefaultBreakConfig());
       default:
         return Promise.resolve(null);
     }

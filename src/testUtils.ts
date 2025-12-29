@@ -34,8 +34,8 @@ export class FakeStore {
 
 // Default timer status for tests
 // Default timer status for tests
-import { DEFAULT_BREAK_CONFIG, DEFAULT_TIMER_STATUS } from "./constants";
-export { DEFAULT_BREAK_CONFIG, DEFAULT_TIMER_STATUS };
+import { DEFAULT_BREAK_CONFIG, DEFAULT_TIMER_STATUS, getDefaultBreakConfig, getDefaultTimerStatus } from "./constants";
+export { DEFAULT_BREAK_CONFIG, DEFAULT_TIMER_STATUS, getDefaultBreakConfig, getDefaultTimerStatus };
 
 // Store data for tests
 const mockStoreData: Record<string, unknown> = {};
@@ -60,9 +60,9 @@ export const getWindowLabel = () => _windowLabel;
 export const mockInvoke = mock((cmd: string, _args?: unknown) => {
   switch (cmd) {
     case "get_timer_state":
-      return Promise.resolve(DEFAULT_TIMER_STATUS);
+      return Promise.resolve(getDefaultTimerStatus());
     case "get_settings":
-      return Promise.resolve(DEFAULT_BREAK_CONFIG);
+      return Promise.resolve(getDefaultBreakConfig());
     default:
       return Promise.resolve(null);
   }
