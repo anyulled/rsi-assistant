@@ -68,16 +68,15 @@ jobs:
         run: cargo test --release
         working-directory: src-tauri
 
-      - name: Build Tauri App (DMG)
-        run: bunx tauri build --target x86_64-apple-darwin
+      - name: Build and Release Tauri App
+        uses: tauri-apps/tauri-action@v0
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
-      - name: Upload Release Asset
-        uses: shogo82148/actions-upload-release-asset@v1
         with:
-          upload_url: ${{ needs.release-please.outputs.upload_url }}
-          asset_path: src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
-          asset_name: RSI-Assistant-${{ needs.release-please.outputs.tag_name }}-x64.dmg
-          asset_content_type: application/x-apple-diskimage
+          tagName: ${{ needs.release-please.outputs.tag_name }}
+          releaseName: ${{ needs.release-please.outputs.tag_name }}
+          releaseBody: "See the assets to download and install this version."
+          releaseDraft: false
+          prerelease: false
