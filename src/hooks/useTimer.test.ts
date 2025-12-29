@@ -30,14 +30,16 @@ describe("useTimer", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (listen as any).mockReset();
 
-    // Default implementations
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation(() => Promise.resolve(null));
+    // Default listener implementation
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (listen as any).mockImplementation(() => Promise.resolve(() => {}));
   });
 
   it("initializes with default status (not null)", () => {
+    // Mock invoke to never resolve, so we can test the initial state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (invoke as any).mockImplementation(() => new Promise(() => {}));
+
     const { result } = renderHook(() => useTimer());
     expect(result.current).toEqual(DEFAULT_STATUS);
   });
@@ -75,6 +77,10 @@ describe("useTimer", () => {
   });
 
   it("updates status on timer-update event", async () => {
+    // Mock invoke to not interfere with this test (never resolve)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (invoke as any).mockImplementation(() => new Promise(() => {}));
+
     let eventHandler: ((event: { payload: TimerStatus }) => void) | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (listen as any).mockImplementation((event: string, handler: (event: { payload: TimerStatus }) => void) => {
