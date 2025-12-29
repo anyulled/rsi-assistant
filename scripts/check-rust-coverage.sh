@@ -51,8 +51,9 @@ trap - ERR
 set +e
 
 # Exclude integration files (lib.rs, main.rs) from coverage as they're not unit-testable
+# Use --lib to only run library tests (avoiding binary compilation memory pressure)
 echo "    Running cargo llvm-cov..."
-cargo llvm-cov --all-features --workspace --ignore-filename-regex '(lib|main)\.rs' > "$TEMP_OUTPUT" 2>&1
+cargo llvm-cov --lib --ignore-filename-regex '(lib|main)\.rs' > "$TEMP_OUTPUT" 2>&1
 COVERAGE_EXIT_CODE=$?
 
 # Restore the ERR trap and error handling
