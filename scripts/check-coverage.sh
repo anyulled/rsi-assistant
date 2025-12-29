@@ -1,22 +1,59 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Trap errors and interruptions for better error messages
+trap 'echo ""; echo "❌ Script interrupted or failed at line $LINENO"; exit 130' INT TERM
+trap 'echo ""; echo "❌ Script failed at line $LINENO with exit code $?"; exit 1' ERR
+
+echo "==> Frontend Coverage Check Script"
+echo ""
+
 # Navigate to project root (parent of scripts directory)
+echo "[1/5] Navigating to project root..."
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 cd "$PROJECT_ROOT"
+echo "    ✓ Working directory: $(pwd)"
+echo ""
 
 # Frontend Coverage Check Script
 # This script runs frontend tests with coverage and enforces an 80% threshold
 
-echo "Running frontend tests with coverage..."
+# Check if bun is installed
+echo "[2/5] Checking for bun installation..."
+if ! command -v bun &> /dev/null; then
+  echo "    ❌ bun is not installed"
+  echo ""
+  echo "To install it, visit: https://bun.sh/"
+  echo "Or run: curl -fsSL https://bun.sh/install | bash"
+  echo ""
+  exit 1
+fi
+echo "    ✓ bun found: $(command -v bun)"
+echo ""
+
+echo "[3/5] Running frontend tests with coverage..."
+echo "    This may take a minute..."
+echo ""
 
 # Run tests with coverage once and capture output
+# Don't use set -e here so we can capture the output even if it fails
+set +e
 COVERAGE_OUTPUT=$(bun test --coverage ./src 2>&1)
+TEST_EXIT_CODE=$?
+set -e
+
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo "$COVERAGE_OUTPUT"
+  echo ""
+  echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
+  exit $TEST_EXIT_CODE
+fi
+
 echo "$COVERAGE_OUTPUT"
 
 echo ""
-echo "Extracting coverage percentage..."
+echo "[4/5] Extracting coverage percentage..."
 
 # Extract coverage percentage from "All files" line using sed
 # Format: "All files                        |   80.19 |   92.69 |"
@@ -24,17 +61,27 @@ COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "All files" | sed 's/[^|]*|[^0-9]*\([0
 echo "Frontend coverage: ${COVERAGE}%"
 
 if [ -z "$COVERAGE" ]; then
-  echo "❌ Could not parse coverage output"
+  echo "    ❌ Could not parse coverage output"
+  echo ""
+  echo "Expected format: 'All files | XX.XX | ...'"
+  echo "Please check the test output above for issues."
   exit 1
 fi
+echo "    ✓ Extracted coverage: ${COVERAGE}%"
+echo ""
 
+echo "[5/5] Checking coverage threshold..."
 # Pure bash integer comparison (convert to integer by removing decimal)
 COVERAGE_INT=${COVERAGE%.*}
-echo "Coverage as integer: $COVERAGE_INT"
+echo "    Coverage: ${COVERAGE}% (threshold: 80%)"
 
 if [ "$COVERAGE_INT" -lt 80 ]; then
-  echo "❌ Frontend coverage (${COVERAGE}%) is below 80% threshold"
+  echo "    ❌ Frontend coverage (${COVERAGE}%) is below 80% threshold"
+  echo ""
+  echo "To improve coverage, add more tests to untested code."
   exit 1
 fi
 
-echo "✅ Frontend coverage (${COVERAGE}%) meets 80% threshold"
+echo "    ✓ Coverage meets threshold"
+echo ""
+echo "✅ All checks passed!"
