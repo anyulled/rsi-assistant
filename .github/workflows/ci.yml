@@ -25,25 +25,7 @@ jobs:
         run: bun run build
 
       - name: Run tests with coverage and check threshold
-        run: |
-          # Run tests with coverage once and capture output
-          COVERAGE_OUTPUT=$(bun test --coverage ./src 2>&1)
-          echo "$COVERAGE_OUTPUT"
-
-          # Extract coverage percentage from "All files" line
-          COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "All files" | awk '{print $4}' | sed 's/%//')
-          echo "Frontend coverage: $COVERAGE%"
-
-          if [ -z "$COVERAGE" ]; then
-            echo "❌ Could not parse coverage output"
-            exit 1
-          fi
-
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "❌ Frontend coverage ($COVERAGE%) is below 80% threshold"
-            exit 1
-          fi
-          echo "✅ Frontend coverage ($COVERAGE%) meets 80% threshold"
+        run: ./scripts/check-coverage.sh
 
       - name: Lint frontend
         run: bunx eslint . --ext .js,.ts,.tsx
@@ -72,27 +54,7 @@ jobs:
         working-directory: src-tauri
 
       - name: Run tests with coverage and check threshold
-        run: |
-          # Run coverage once and capture output (this also runs tests)
-          COVERAGE_OUTPUT=$(cargo llvm-cov --all-features --workspace 2>&1)
-          echo "$COVERAGE_OUTPUT"
-
-          # Extract coverage from TOTAL line, using the region coverage (more reliable)
-          # Format: TOTAL [regions]  X.XX%  [functions]  Y.YY%  [lines]  Z.ZZ%
-          COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "TOTAL" | awk '{for(i=1;i<=NF;i++) if($i ~ /[0-9]+\.[0-9]+%/) {print $i; exit}}' | sed 's/%//')
-          echo "Rust coverage: $COVERAGE%"
-
-          if [ -z "$COVERAGE" ]; then
-            echo "❌ Could not parse coverage output"
-            exit 1
-          fi
-
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "❌ Rust coverage ($COVERAGE%) is below 80% threshold"
-            exit 1
-          fi
-          echo "✅ Rust coverage ($COVERAGE%) meets 80% threshold"
-        working-directory: src-tauri
+        run: ./scripts/check-rust-coverage.sh
 
       - name: Lint Rust code (clippy)
         run: cargo clippy --release -- -D warnings
