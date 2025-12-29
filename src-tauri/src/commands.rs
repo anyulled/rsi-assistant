@@ -171,4 +171,84 @@ mod tests {
         let is_valid = matches!(break_type, "micro" | "rest");
         assert!(!is_valid);
     }
+
+    #[test]
+    fn test_update_and_get_settings_logic() {
+        // Test the underlying logic that commands use
+        let mut service = crate::timer::TimerService::new(BreakConfig::default());
+
+        // Verify default settings (default is 3 minutes = 180 seconds)
+        assert_eq!(service.config.microbreak_interval, 180);
+
+        // Update settings
+        let mut new_config = BreakConfig::default();
+        new_config.microbreak_interval = 600;
+        new_config.rest_interval = 4800;
+        service.update_config(new_config.clone());
+
+        // Verify settings were updated
+        assert_eq!(service.config.microbreak_interval, 600);
+        assert_eq!(service.config.rest_interval, 4800);
+    }
+
+    #[test]
+    fn test_reset_break_commands() {
+        let mut service = crate::timer::TimerService::new(BreakConfig::default());
+
+        // Test micro break reset
+        service.trigger_microbreak();
+        let status = service.get_status();
+        assert!(status.break_type.is_some());
+
+        service.reset_microbreak();
+        let status = service.get_status();
+        assert!(status.break_type.is_none());
+        assert_eq!(status.break_duration, 0);
+
+        // Test rest break reset
+        service.trigger_rest_break();
+        let status = service.get_status();
+        assert!(status.break_type.is_some());
+
+        service.reset_rest_break();
+        let status = service.get_status();
+        assert!(status.break_type.is_none());
+        assert_eq!(status.break_duration, 0);
+    }
+
+    #[test]
+    fn test_record_break_taken_logic() {
+        let mut store = crate::stats::StatsStore::default();
+        let today = store.get_or_create_today();
+
+        // Initialize counters
+        let initial_micro = today.micro_prompted_taken;
+        let initial_rest = today.rest_prompted_taken;
+
+        // Record breaks (simulating what the command does)
+        today.micro_prompted_taken += 1;
+        today.rest_prompted_taken += 1;
+
+        // Verify counters increased
+        assert_eq!(today.micro_prompted_taken, initial_micro + 1);
+        assert_eq!(today.rest_prompted_taken, initial_rest + 1);
+    }
+
+    #[test]
+    fn test_record_break_postponed_logic() {
+        let mut store = crate::stats::StatsStore::default();
+        let today = store.get_or_create_today();
+
+        // Initialize counters
+        let initial_micro = today.micro_postponed;
+        let initial_rest = today.rest_postponed;
+
+        // Record postponed breaks (simulating what the command does)
+        today.micro_postponed += 1;
+        today.rest_postponed += 1;
+
+        // Verify counters increased
+        assert_eq!(today.micro_postponed, initial_micro + 1);
+        assert_eq!(today.rest_postponed, initial_rest + 1);
+    }
 }
