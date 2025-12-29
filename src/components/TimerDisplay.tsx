@@ -1,5 +1,5 @@
 import type { TimerStatus } from "@/types";
-import { Clock, Coffee, Hand, Calendar } from "lucide-react";
+import { Calendar, Clock, Coffee, Hand } from "lucide-react";
 
 interface CircularProgressProps {
   value: number;
@@ -40,8 +40,8 @@ function CircularProgress({ value, max, size = 120, strokeWidth = 8, color = "#3
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-foreground">{Math.floor(safeValue)}</span>
-        <span className="text-xs text-muted-foreground">/ {safeMax}s</span>
+        <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.floor(safeValue)}</span>
+        <span className="text-xs text-gray-600 dark:text-gray-300">/ {safeMax}s</span>
       </div>
     </div>
   );
@@ -96,44 +96,44 @@ export function TimerDisplay({ status }: { status: TimerStatus }) {
       <div className="grid grid-cols-3 gap-12 w-full max-w-3xl">
         {/* Microbreak */}
         <div className="flex flex-col items-center space-y-3">
-          <CircularProgress value={status.micro_active} max={status.micro_target} color="#10b981" isOverdue={status.micro_is_overdue} />
+          <CircularProgress value={status.microActive} max={status.microTarget} color="#10b981" isOverdue={status.microIsOverdue} />
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
               <Hand className="w-4 h-4" />
               Micro-break
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {formatTime(status.micro_active)} / {formatTime(status.micro_target)}
+              {formatTime(status.microActive)} / {formatTime(status.microTarget)}
             </div>
-            {status.micro_is_overdue && <div className="text-xs text-orange-500 font-medium mt-1">Overdue!</div>}
+            {status.microIsOverdue && <div className="text-xs text-orange-500 font-medium mt-1">Overdue!</div>}
           </div>
         </div>
 
         {/* Rest Break */}
         <div className="flex flex-col items-center space-y-3">
-          <CircularProgress value={status.rest_active} max={status.rest_target} color="#8b5cf6" isOverdue={status.rest_is_overdue} />
+          <CircularProgress value={status.restActive} max={status.restTarget} color="#8b5cf6" isOverdue={status.restIsOverdue} />
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
               <Coffee className="w-4 h-4" />
               Rest break
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {formatTime(status.rest_active)} / {formatTime(status.rest_target)}
+              {formatTime(status.restActive)} / {formatTime(status.restTarget)}
             </div>
-            {status.rest_is_overdue && <div className="text-xs text-orange-500 font-medium mt-1">Overdue!</div>}
+            {status.restIsOverdue && <div className="text-xs text-orange-500 font-medium mt-1">Overdue!</div>}
           </div>
         </div>
 
         {/* Daily Limit */}
         <div className="flex flex-col items-center space-y-3">
-          <CircularProgress value={status.daily_usage} max={status.daily_limit} color="#3b82f6" />
+          <CircularProgress value={status.dailyUsage} max={status.dailyLimit} color="#3b82f6" />
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
               <Calendar className="w-4 h-4" />
               Daily limit
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {formatTime(status.daily_usage)} / {formatTime(status.daily_limit)}
+              {formatTime(status.dailyUsage)} / {formatTime(status.dailyLimit)}
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ export function TimerDisplay({ status }: { status: TimerStatus }) {
       {/* Current Idle Status */}
       <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-sm">
         <span className="text-gray-600 dark:text-gray-400">Current idle:</span>
-        <span className="font-semibold text-gray-900 dark:text-white">{formatTime(status.current_idle)}</span>
+        <span className="font-semibold text-gray-900 dark:text-white">{formatTime(status.currentIdle)}</span>
       </div>
     </div>
   );

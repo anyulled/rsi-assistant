@@ -14,9 +14,21 @@ pub struct DeviceQueryIdleDetector {
 }
 
 impl DeviceQueryIdleDetector {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, String> {
         let last_activity = Arc::new(Mutex::new(Self::now()));
         let last_activity_clone = last_activity.clone();
+
+        // Test if we can create DeviceState before spawning thread
+        // This will panic if accessibility permissions aren't granted
+        let test_result = std::panic::catch_unwind(|| DeviceState::new());
+
+        if test_result.is_err() {
+            return Err(
+                "Accessibility permissions are required for this app to function properly. \
+                Please grant accessibility permissions in System Settings > Privacy & Security > Accessibility."
+                    .to_string(),
+            );
+        }
 
         let thread_handle = thread::spawn(move || {
             let device_state = DeviceState::new();
@@ -36,7 +48,7 @@ impl DeviceQueryIdleDetector {
             }
         });
 
-        Self { last_activity, _polling_thread: Some(thread_handle) }
+        Ok(Self { last_activity, _polling_thread: Some(thread_handle) })
     }
 
     fn now() -> u64 {
@@ -73,9 +85,18 @@ mod tests {
 
     #[test]
     fn test_device_query_init() {
-        let detector = DeviceQueryIdleDetector::new();
-        let idle = detector.get_seconds_since_last_input();
-        // Just verify it doesn't panic and returns a sane value
-        assert!(idle < 1000);
+        // This test may fail on CI/CD without accessibility permissions
+        // In that case, we expect an Err result
+        match DeviceQueryIdleDetector::new() {
+            Ok(detector) => {
+                let idle = detector.get_seconds_since_last_input();
+                // Just verify it doesn't panic and returns a sane value
+                assert!(idle < 1000);
+            }
+            Err(_) => {
+                // Expected on systems without accessibility permissions
+                println!("Skipping test: accessibility permissions not granted");
+            }
+        }
     }
 }

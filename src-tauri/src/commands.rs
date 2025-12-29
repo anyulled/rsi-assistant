@@ -12,7 +12,12 @@ pub struct AppState {
 #[tauri::command]
 pub fn get_timer_state(state: State<AppState>) -> TimerStatus {
     let service = state.timer_service.lock().unwrap();
-    service.get_status()
+    let status = service.get_status();
+    println!(
+        "[DEBUG] get_timer_state - break_type: {:?}, break_duration: {}, break_elapsed: {}",
+        status.break_type, status.break_duration, status.break_elapsed
+    );
+    status
 }
 
 #[tauri::command]
@@ -98,10 +103,23 @@ pub fn trigger_break(state: State<AppState>, break_type: String) -> Result<(), S
     let mut service = state.timer_service.lock().unwrap();
 
     match break_type.as_str() {
-        "micro" => service.trigger_microbreak(),
-        "rest" => service.trigger_rest_break(),
+        "micro" => {
+            service.trigger_microbreak();
+            println!("[DEBUG] trigger_break: micro break triggered");
+        }
+        "rest" => {
+            service.trigger_rest_break();
+            println!("[DEBUG] trigger_break: rest break triggered");
+        }
         _ => return Err("Invalid break type".to_string()),
     }
+
+    // Log the status after triggering
+    let status = service.get_status();
+    println!(
+        "[DEBUG] After trigger - break_type: {:?}, break_duration: {}, micro_is_overdue: {}",
+        status.break_type, status.break_duration, status.micro_is_overdue
+    );
 
     Ok(())
 }

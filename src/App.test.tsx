@@ -1,8 +1,8 @@
-import "./setupTests";
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { render, within, waitFor } from "@testing-library/react";
-import App from "./App";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { render, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import App from "./App";
+import "./setupTests";
 
 import { invoke } from "@tauri-apps/api/core";
 
@@ -30,18 +30,21 @@ describe("App", () => {
       if (cmd === "get_timer_state") {
         return Promise.resolve({
           mode: "Normal",
-          micro_active: 0,
-          micro_target: 100,
-          micro_is_overdue: false,
-          rest_active: 0,
-          rest_target: 1000,
-          rest_is_overdue: false,
-          daily_usage: 0,
-          daily_limit: 10000,
-          current_idle: 0,
+          microActive: 0,
+          microTarget: 100,
+          microIsOverdue: false,
+          restActive: 0,
+          restTarget: 1000,
+          restIsOverdue: false,
+          dailyUsage: 0,
+          dailyLimit: 10000,
+          currentIdle: 0,
+          breakType: null,
+          breakDuration: 0,
+          breakElapsed: 0,
         });
       }
-      if (cmd === "get_settings") return Promise.resolve({}); // needed for Settings
+      if (cmd === "get_settings") return Promise.resolve({});
       return Promise.resolve(null);
     });
 
@@ -63,9 +66,12 @@ describe("App", () => {
       if (cmd === "get_timer_state")
         return Promise.resolve({
           mode: "Normal",
-          micro_active: 0,
-          micro_target: 100,
-          rest_target: 1000,
+          microActive: 0,
+          microTarget: 100,
+          restTarget: 1000,
+          breakType: null,
+          breakDuration: 0,
+          breakElapsed: 0,
         });
       if (cmd === "get_settings") return Promise.resolve({});
       return Promise.resolve(null);
@@ -93,11 +99,14 @@ describe("App", () => {
     (invoke as any).mockImplementation((cmd: string) => {
       if (cmd === "get_timer_state") {
         return Promise.resolve({
-          micro_is_overdue: true,
-          rest_is_overdue: false,
+          microIsOverdue: true,
+          restIsOverdue: false,
           mode: "Normal",
-          micro_target: 100,
-          rest_target: 1000,
+          microTarget: 100,
+          restTarget: 1000,
+          breakType: "micro",
+          breakDuration: 20,
+          breakElapsed: 0,
         });
       }
       return Promise.resolve(null);

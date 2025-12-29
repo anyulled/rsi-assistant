@@ -26,7 +26,57 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             // Initialize services
-            let idle_detector = DeviceQueryIdleDetector::new();
+            let idle_detector = match DeviceQueryIdleDetector::new() {
+                Ok(detector) => detector,
+                Err(err_msg) => {
+                    // Show a user-friendly dialog explaining the issue
+                    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+                    use tauri_plugin_opener::OpenerExt;
+
+                    let dialog_message = format!(
+                        "{}\\n\\n\
+                        This app needs Accessibility permissions to monitor your activity and remind you to take breaks.\\n\\n\
+                        To enable:\\n\
+                        1. Open System Settings\\n\
+                        2. Go to Privacy & Security > Accessibility\\n\
+                        3. Enable access for RSI Assistant\\n\\n\
+                        Would you like to open System Settings now?",
+                        err_msg
+                    );
+
+                    let app_handle = app.handle().clone();
+
+                    // Show dialog in blocking mode
+                    tauri::async_runtime::block_on(async move {
+                        let result = app_handle
+                            .dialog()
+                            .message(dialog_message)
+                            .title("Accessibility Permissions Required")
+                            .kind(MessageDialogKind::Warning)
+                            .buttons(MessageDialogButtons::OkCancelCustom(
+                                "Open Settings".to_string(),
+                                "Quit".to_string(),
+                            ))
+                            .blocking_show();
+
+                        if result {
+                            // User clicked "Open Settings"
+                            // Open System Settings to Accessibility pane
+                            let _ = app_handle.opener().open_url(
+                                "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+                                None::<&str>,
+                            );
+                        }
+
+                        // Exit the app either way since it can't function without permissions
+                        app_handle.exit(1);
+                    });
+
+                    // This line won't be reached, but needed for type checking
+                    return Err("Accessibility permissions not granted".into());
+                }
+            };
+
             let timer_service = TimerService::new(BreakConfig::default());
 
             // Manage state
@@ -214,10 +264,26 @@ pub fn run() {
                     let idle_seconds = idle_detector.get_seconds_since_last_input();
                     let is_idle = idle_seconds > 5; // Simple threshold
 
+                    // First, tick and check if we need to start a break
                     let status = {
                         let state = handle.state::<AppState>();
                         let mut service = state.timer_service.lock().unwrap();
                         service.tick(is_idle);
+
+                        // Auto-start break if overdue but not yet started
+                        let preliminary_status = service.get_status();
+                        if (preliminary_status.micro_is_overdue
+                            || preliminary_status.rest_is_overdue)
+                            && preliminary_status.break_type.is_none()
+                        {
+                            if preliminary_status.rest_is_overdue {
+                                service.start_break(crate::timer::BreakType::Rest);
+                            } else if preliminary_status.micro_is_overdue {
+                                service.start_break(crate::timer::BreakType::Micro);
+                            }
+                        }
+
+                        // Now get the final status (with break state included)
                         let status = service.get_status();
 
                         // Update statistics with current usage
@@ -248,6 +314,14 @@ pub fn run() {
                     was_micro_overdue = status.micro_is_overdue;
                     was_rest_overdue = status.rest_is_overdue;
 
+                    // Log what we're about to emit
+                    if status.break_type.is_some() || status.micro_is_overdue || status.rest_is_overdue {
+                        println!(
+                            "[DEBUG] Emitting timer-update: break_type={:?}, break_duration={}, break_elapsed={}",
+                            status.break_type, status.break_duration, status.break_elapsed
+                        );
+                    }
+
                     // Emit event to frontend
                     if let Err(e) = handle.emit("timer-update", status) {
                         eprintln!("Failed to emit timer update: {}", e);
@@ -255,11 +329,11 @@ pub fn run() {
 
                     // Manage Overlay Window
                     if let Some(overlay) = handle.get_webview_window("overlay") {
-                        let should_show = status.micro_is_overdue || status.rest_is_overdue;
-                        // To avoid excessive IPC calls, we could track state, but for now simple show/hide logic
+                        // Show overlay when a break is in progress
+                        let should_show = status.break_type.is_some();
+
                         if should_show {
                             // Ensure it's visible and on top
-                            // We use unwrap_or to ignore errors gracefully in the loop
                             let _ = overlay.show();
                             let _ = overlay.set_focus();
                             let _ = overlay.set_always_on_top(true);

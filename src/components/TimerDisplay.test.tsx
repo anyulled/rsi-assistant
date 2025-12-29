@@ -1,21 +1,24 @@
-import { describe, it, expect } from "bun:test";
-import { render, within } from "@testing-library/react";
-import { TimerDisplay } from "./TimerDisplay";
 import type { TimerStatus } from "@/types";
+import { render, within } from "@testing-library/react";
+import { describe, expect, it } from "bun:test";
+import { TimerDisplay } from "./TimerDisplay";
 
 describe("TimerDisplay", () => {
   it("renders status correctly with circular progress", () => {
     const mockStatus: TimerStatus = {
-      daily_usage: 1200,
-      daily_limit: 3600,
-      micro_active: 300,
-      micro_target: 600,
-      micro_is_overdue: false,
-      rest_active: 0,
-      rest_target: 300,
-      rest_is_overdue: false,
-      current_idle: 5,
+      dailyUsage: 1200,
+      dailyLimit: 3600,
+      microActive: 300,
+      microTarget: 600,
+      microIsOverdue: false,
+      restActive: 0,
+      restTarget: 300,
+      restIsOverdue: false,
+      currentIdle: 5,
       mode: "Normal",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
     };
 
     const { container } = render(<TimerDisplay status={mockStatus} />);
@@ -29,9 +32,9 @@ describe("TimerDisplay", () => {
     expect(within(container).getByText("Daily limit")).toBeDefined();
 
     // Check that values are displayed in progress circles
-    expect(within(container).getByText("300")).toBeDefined(); // micro_active value
-    expect(within(container).getByText("/ 600s")).toBeDefined(); // micro_target
-    expect(within(container).getByText("1200")).toBeDefined(); // daily_usage value
+    expect(within(container).getByText("300")).toBeDefined(); // microActive value
+    expect(within(container).getByText("/ 600s")).toBeDefined(); // microTarget
+    expect(within(container).getByText("1200")).toBeDefined(); // dailyUsage value
 
     // Check current idle
     expect(within(container).getByText(/Current idle:/)).toBeDefined();
@@ -39,16 +42,19 @@ describe("TimerDisplay", () => {
 
   it("shows overdue status when breaks are overdue", () => {
     const mockStatus: TimerStatus = {
-      daily_usage: 100,
-      daily_limit: 3600,
-      micro_active: 700,
-      micro_target: 600,
-      micro_is_overdue: true,
-      rest_active: 400,
-      rest_target: 300,
-      rest_is_overdue: true,
-      current_idle: 0,
+      dailyUsage: 100,
+      dailyLimit: 3600,
+      microActive: 700,
+      microTarget: 600,
+      microIsOverdue: true,
+      restActive: 400,
+      restTarget: 300,
+      restIsOverdue: true,
+      currentIdle: 0,
       mode: "Normal",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
     };
 
     const { container } = render(<TimerDisplay status={mockStatus} />);
@@ -60,23 +66,26 @@ describe("TimerDisplay", () => {
 
   it("displays values in circular progress indicators", () => {
     const mockStatus: TimerStatus = {
-      daily_usage: 1800,
-      daily_limit: 3600,
-      micro_active: 300,
-      micro_target: 600,
-      micro_is_overdue: false,
-      rest_active: 150,
-      rest_target: 300,
-      rest_is_overdue: false,
-      current_idle: 10,
+      dailyUsage: 1800,
+      dailyLimit: 3600,
+      microActive: 300,
+      microTarget: 600,
+      microIsOverdue: false,
+      restActive: 150,
+      restTarget: 300,
+      restIsOverdue: false,
+      currentIdle: 10,
       mode: "Quiet",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
     };
 
     const { container } = render(<TimerDisplay status={mockStatus} />);
 
     // Check that numeric values are displayed in the circles
-    expect(within(container).getByText("300")).toBeDefined(); // micro_active
-    expect(within(container).getByText("150")).toBeDefined(); // rest_active
-    expect(within(container).getByText("1800")).toBeDefined(); // daily_usage
+    expect(within(container).getByText("300")).toBeDefined(); // microActive
+    expect(within(container).getByText("150")).toBeDefined(); // restActive
+    expect(within(container).getByText("1800")).toBeDefined(); // dailyUsage
   });
 });

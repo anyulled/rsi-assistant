@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -6,6 +7,13 @@ pub enum OperationMode {
     Normal,
     Quiet,
     Suspended,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum BreakType {
+    Micro,
+    Rest,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,6 +71,11 @@ pub struct TimerStatus {
     pub current_idle: u64,
 
     pub mode: OperationMode,
+
+    // Active break state
+    pub break_type: Option<BreakType>,
+    pub break_duration: u64,
+    pub break_elapsed: u64,
 }
 
 pub struct TimerService {
@@ -73,11 +86,23 @@ pub struct TimerService {
     pub rest_active: u64,
 
     pub current_idle: u64,
+
+    // Active break tracking
+    break_in_progress: Option<BreakType>,
+    break_started_at: Option<Instant>,
 }
 
 impl TimerService {
     pub fn new(config: BreakConfig) -> Self {
-        Self { config, daily_usage: 0, micro_active: 0, rest_active: 0, current_idle: 0 }
+        Self {
+            config,
+            daily_usage: 0,
+            micro_active: 0,
+            rest_active: 0,
+            current_idle: 0,
+            break_in_progress: None,
+            break_started_at: None,
+        }
     }
 
     pub fn tick(&mut self, is_idle: bool) {
@@ -127,10 +152,20 @@ impl TimerService {
 
     pub fn reset_microbreak(&mut self) {
         self.micro_active = 0;
+        // Clear break state if micro break was in progress
+        if self.break_in_progress == Some(BreakType::Micro) {
+            self.break_in_progress = None;
+            self.break_started_at = None;
+        }
     }
 
     pub fn reset_rest_break(&mut self) {
         self.rest_active = 0;
+        // Clear break state if rest break was in progress
+        if self.break_in_progress == Some(BreakType::Rest) {
+            self.break_in_progress = None;
+            self.break_started_at = None;
+        }
     }
 
     pub fn set_mode(&mut self, mode: OperationMode) {
@@ -141,14 +176,46 @@ impl TimerService {
         // Set active time just above the interval to trigger 'overdue' logic
         // The actual overlay logic depends on the frontend seeing 'rest_is_overdue'
         self.rest_active = self.config.rest_interval + 1;
+        // Start the break immediately
+        self.start_break(BreakType::Rest);
     }
 
     pub fn trigger_microbreak(&mut self) {
         // Set active time just above the interval to trigger 'overdue' logic
         self.micro_active = self.config.microbreak_interval + 1;
+        // Start the break immediately
+        self.start_break(BreakType::Micro);
+    }
+
+    /// Start tracking an active break
+    pub fn start_break(&mut self, break_type: BreakType) {
+        self.break_in_progress = Some(break_type);
+        self.break_started_at = Some(Instant::now());
+    }
+
+    /// Check if a break is currently in progress
+    pub fn is_break_active(&self) -> bool {
+        self.break_in_progress.is_some()
+    }
+
+    /// Get the duration of the current break type
+    fn get_break_duration(&self, break_type: BreakType) -> u64 {
+        match break_type {
+            BreakType::Micro => self.config.microbreak_duration,
+            BreakType::Rest => self.config.rest_duration,
+        }
+    }
+
+    /// Get elapsed time for current break
+    fn get_break_elapsed(&self) -> u64 {
+        self.break_started_at.map(|started| started.elapsed().as_secs()).unwrap_or(0)
     }
 
     pub fn get_status(&self) -> TimerStatus {
+        let break_duration =
+            self.break_in_progress.map(|bt| self.get_break_duration(bt)).unwrap_or(0);
+        let break_elapsed = self.get_break_elapsed();
+
         TimerStatus {
             daily_usage: self.daily_usage,
             daily_limit: self.config.daily_limit,
@@ -163,6 +230,10 @@ impl TimerService {
 
             current_idle: self.current_idle,
             mode: self.config.mode,
+
+            break_type: self.break_in_progress,
+            break_duration,
+            break_elapsed,
         }
     }
 }
@@ -272,12 +343,37 @@ mod tests {
 
     #[test]
     fn test_trigger_microbreak() {
-        let mut config = BreakConfig::default();
-        config.microbreak_interval = 100;
+        let config = BreakConfig {
+            microbreak_interval: 100,
+            microbreak_duration: 30,
+            ..BreakConfig::default()
+        };
         let mut service = TimerService::new(config);
 
         service.trigger_microbreak();
+
+        // Should be overdue
         assert!(service.micro_active > service.config.microbreak_interval);
+
+        // Should have break state set
+        let status = service.get_status();
+        assert_eq!(status.break_type, Some(BreakType::Micro));
+        assert_eq!(status.break_duration, 30);
+        assert!(status.micro_is_overdue);
+    }
+
+    #[test]
+    fn test_trigger_rest_break_sets_break_state() {
+        let config =
+            BreakConfig { rest_interval: 100, rest_duration: 600, ..BreakConfig::default() };
+        let mut service = TimerService::new(config);
+
+        service.trigger_rest_break();
+
+        let status = service.get_status();
+        assert_eq!(status.break_type, Some(BreakType::Rest));
+        assert_eq!(status.break_duration, 600);
+        assert!(status.rest_is_overdue);
     }
 
     #[test]

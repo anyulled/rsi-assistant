@@ -1,10 +1,10 @@
-import "../setupTests";
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { render, fireEvent, waitFor, within, act } from "@testing-library/react";
-import { BreakOverlay } from "./BreakOverlay";
 import { useTimer } from "@/hooks/useTimer";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { fireEvent, render, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import "../setupTests";
+import { BreakOverlay } from "./BreakOverlay";
 
 // Mock useTimer
 mock.module("@/hooks/useTimer", () => ({
@@ -17,23 +17,18 @@ describe("BreakOverlay", () => {
     // Reset invoke mock to return settings by default
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (invoke as any).mockImplementation((cmd: string) => {
-      if (cmd === "get_settings") {
-        return Promise.resolve({
-          microbreak_duration: 20,
-          rest_duration: 300,
-          microbreak_enabled: true,
-          rest_enabled: true,
-        });
-      }
       return Promise.resolve();
     });
   });
 
-  it("renders initial state", () => {
+  it("renders initial state with micro break", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
+      microIsOverdue: true,
+      restIsOverdue: false,
+      breakType: "micro",
+      breakDuration: 20,
+      breakElapsed: 0,
     });
 
     const { baseElement } = render(<BreakOverlay />);
@@ -46,8 +41,11 @@ describe("BreakOverlay", () => {
   it("renders rest break message", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: false,
-      rest_is_overdue: true,
+      microIsOverdue: false,
+      restIsOverdue: true,
+      breakType: "rest",
+      breakDuration: 300,
+      breakElapsed: 0,
     });
 
     const { baseElement } = render(<BreakOverlay />);
@@ -55,121 +53,61 @@ describe("BreakOverlay", () => {
     expect(screen.getByText("Rest Break Time!")).toBeInTheDocument();
   });
 
-  it("displays progress bar with remaining time", async () => {
+  it("displays progress bar with remaining time", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
+      microIsOverdue: true,
+      restIsOverdue: false,
+      breakType: "micro",
+      breakDuration: 20,
+      breakElapsed: 5,
     });
 
     const { baseElement } = render(<BreakOverlay />);
     const screen = within(baseElement);
 
-    // Wait for settings to be fetched and state to update
-    await waitFor(
-      () => {
-        // Progress bar should show initial remaining time (0:20 for 20s microbreak)
-        expect(screen.getByText(/remaining/)).toBeInTheDocument();
-      },
-      { timeout: 2000 }
-    );
-
-    // Verify the progress bar container exists
+    // Progress bar should show remaining time (15 seconds = 0:15)
+    expect(screen.getByText(/remaining/)).toBeInTheDocument();
     expect(screen.getByText("Break Progress")).toBeInTheDocument();
   });
 
-  it("starts with a full countdown and full progress bar", async () => {
+  it("starts with a full countdown and full progress bar", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
+      microIsOverdue: true,
+      restIsOverdue: false,
+      breakType: "micro",
+      breakDuration: 20,
+      breakElapsed: 0,
     });
 
     const { baseElement } = render(<BreakOverlay />);
     const screen = within(baseElement);
 
-    await waitFor(
-      () => {
-        expect(screen.getByText("0:20 remaining")).toBeInTheDocument();
-      },
-      { timeout: 2000 }
-    );
+    expect(screen.getByText("0:20 remaining")).toBeInTheDocument();
 
     const progressBar = screen.getByTestId("progress-bar");
     expect(progressBar.getAttribute("style")).toContain("width: 100%");
   });
 
-  it("counts down and shrinks the progress bar over time", async () => {
+  it("shows reduced progress as time elapses", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
+      microIsOverdue: true,
+      restIsOverdue: false,
+      breakType: "micro",
+      breakDuration: 20,
+      breakElapsed: 5, // 5 seconds elapsed
     });
 
     const { baseElement } = render(<BreakOverlay />);
     const screen = within(baseElement);
 
-    await waitFor(
-      () => {
-        expect(screen.getByText("0:20 remaining")).toBeInTheDocument();
-      },
-      { timeout: 2000 }
-    );
-
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-    });
-
-    expect(screen.getByText("0:19 remaining")).toBeInTheDocument();
+    expect(screen.getByText("0:15 remaining")).toBeInTheDocument();
 
     const progressBar = screen.getByTestId("progress-bar");
     const width = progressBar.style.width.replace("%", "");
-    expect(Number(width)).toBeLessThan(100);
-  });
-
-  it("fetches settings to get break duration", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
-    });
-
-    render(<BreakOverlay />);
-
-    await waitFor(
-      () => {
-        expect(invoke).toHaveBeenCalledWith("get_settings");
-      },
-      { timeout: 2000 }
-    );
-  });
-
-  it("increments progress over time", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
-    });
-
-    const { baseElement } = render(<BreakOverlay />);
-    const screen = within(baseElement);
-
-    // Wait for settings to be loaded and timer to start
-    await waitFor(
-      () => {
-        expect(invoke).toHaveBeenCalledWith("get_settings");
-      },
-      { timeout: 2000 }
-    );
-
-    // Use fake timers to simulate time passing
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-    });
-
-    // The progress bar should have updated (elapsed time > 0)
-    // We check that the component is still rendered and functioning
-    expect(screen.getByText("Break Progress")).toBeInTheDocument();
+    expect(Number(width)).toBe(75); // 15/20 = 75%
   });
 
   it("calls skip break handler for micro break", async () => {
@@ -181,8 +119,11 @@ describe("BreakOverlay", () => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: true,
-      rest_is_overdue: false,
+      microIsOverdue: true,
+      restIsOverdue: false,
+      breakType: "micro",
+      breakDuration: 20,
+      breakElapsed: 0,
     });
 
     const { baseElement } = render(<BreakOverlay />);
@@ -210,8 +151,11 @@ describe("BreakOverlay", () => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: false,
-      rest_is_overdue: true,
+      microIsOverdue: false,
+      restIsOverdue: true,
+      breakType: "rest",
+      breakDuration: 300,
+      breakElapsed: 0,
     });
 
     const { baseElement } = render(<BreakOverlay />);
@@ -230,43 +174,36 @@ describe("BreakOverlay", () => {
     );
   });
 
-  it("uses rest_duration from settings for rest breaks", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
-      if (cmd === "get_settings") {
-        return Promise.resolve({
-          microbreak_duration: 20,
-          rest_duration: 180, // 3 minutes
-          microbreak_enabled: true,
-          rest_enabled: true,
-        });
-      }
-      return Promise.resolve();
-    });
-
+  it("uses rest_duration for rest breaks", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useTimer as any).mockReturnValue({
-      micro_is_overdue: false,
-      rest_is_overdue: true,
+      microIsOverdue: false,
+      restIsOverdue: true,
+      breakType: "rest",
+      breakDuration: 180, // 3 minutes
+      breakElapsed: 0,
     });
 
     const { baseElement } = render(<BreakOverlay />);
     const screen = within(baseElement);
 
-    // Wait for settings to be fetched
-    await waitFor(
-      () => {
-        expect(invoke).toHaveBeenCalledWith("get_settings");
-      },
-      { timeout: 2000 }
-    );
-
     // Should show remaining time based on 180 seconds (3:00)
-    await waitFor(
-      () => {
-        expect(screen.getByText(/remaining/)).toBeInTheDocument();
-      },
-      { timeout: 2000 }
-    );
+    expect(screen.getByText("3:00 remaining")).toBeInTheDocument();
+  });
+
+  it("shows default message when no break type", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useTimer as any).mockReturnValue({
+      microIsOverdue: false,
+      restIsOverdue: false,
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
+    });
+
+    const { baseElement } = render(<BreakOverlay />);
+    const screen = within(baseElement);
+
+    expect(screen.getByText("Time for a break!")).toBeInTheDocument();
   });
 });
