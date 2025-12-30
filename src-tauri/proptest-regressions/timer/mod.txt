@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d50ea13f3445d7fe9d9b93424a26439b9e37d32c954be1b05f30867d8f9d1c11 # shrinks to config = BreakConfig { microbreak_interval: 1, microbreak_duration: 10, microbreak_enabled: false, rest_interval: 60, rest_duration: 60, rest_enabled: false, daily_limit: 3600, daily_enabled: false, warning_duration: 5, mode: Normal }
+cc 5fbb598a1e2aeaf7d84174643111279bfb7d10ff231b142c4571f67517c61518 # shrinks to config = BreakConfig { microbreak_interval: 1, microbreak_duration: 10, microbreak_enabled: false, rest_interval: 60, rest_duration: 60, rest_enabled: true, daily_limit: 3600, daily_enabled: false, warning_duration: 5, mode: Suspended }

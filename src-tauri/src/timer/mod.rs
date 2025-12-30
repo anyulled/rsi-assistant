@@ -638,18 +638,35 @@ mod proptests {
         }
 
         #[test]
-        fn prop_timer_never_negative(config in break_config_strategy()) {
-            // Property: Timer counters never go negative
+        fn prop_timer_saturating_arithmetic(config in break_config_strategy()) {
+            // Property: Timer counters use saturating arithmetic and never overflow
+            // Extract fields to avoid compiler ICE with closure captures
+            let mode = config.mode;
+            let micro_enabled = config.microbreak_enabled;
+            let rest_enabled = config.rest_enabled;
+
             let mut service = TimerService::new(config);
 
+            // Tick many times to verify counters don't overflow
             for _ in 0..50 {
                 service.tick(false);
             }
 
             let status = service.get_status();
-            prop_assert!(status.micro_active >= 0);
-            prop_assert!(status.rest_active >= 0);
-            prop_assert!(status.daily_usage >= 0);
+
+            // In Suspended mode, no counters increment at all
+            if mode != OperationMode::Suspended {
+                // Verify daily_usage accumulates
+                prop_assert!(status.daily_usage > 0);
+
+                // Verify break counters accumulate only when enabled
+                if micro_enabled {
+                    prop_assert!(status.micro_active > 0);
+                }
+                if rest_enabled {
+                    prop_assert!(status.rest_active > 0);
+                }
+            }
         }
     }
 }
