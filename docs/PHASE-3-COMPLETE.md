@@ -20,7 +20,7 @@ Added **3 new property-based tests** that run **768 random test cases** (256 cas
    - **Cases**: 256 random configurations tested
    - **Impact**: **Would have caught the settings persistence bug!**
 
-3. **`prop_timer_never_negative`**
+3. **`prop_timer_saturating_arithmetic`**
    - **Generates**: Random BreakConfigs
    - **Verifies**: Timer counters never go negative after ticking
    - **Cases**: 256 configs × 50 ticks each = 12,800 timer operations tested

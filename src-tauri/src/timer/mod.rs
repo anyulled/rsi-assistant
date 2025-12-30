@@ -477,7 +477,6 @@ mod tests {
         };
 
         let json = serde_json::to_string_pretty(&config).unwrap();
-        println!("Serialized JSON:\n{}", json);
 
         //  Verify it uses camelCase
         assert!(json.contains("microbreakInterval"));
