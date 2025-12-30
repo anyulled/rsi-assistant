@@ -2,6 +2,8 @@
 
 ![RSI Recovery Assistant](public/banner.jpeg)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anyulled/rsi-assistant)
+
 A native macOS menu bar application designed to help prevent Repetitive Strain Injury (RSI) using smart break timers and idle detection. Built with [Tauri](https://tauri.app), [React](https://react.dev), and [Rust](https://www.rust-lang.org).
 
 ## Features
