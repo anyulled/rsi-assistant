@@ -9,9 +9,7 @@ pub struct AppState {
     pub stats_store: Mutex<StatsStore>,
 }
 
-#[tauri::command]
-pub fn get_timer_state(state: State<AppState>) -> TimerStatus {
-    let service = state.timer_service.lock().unwrap();
+fn get_timer_state_impl(service: &TimerService) -> TimerStatus {
     let status = service.get_status();
     println!(
         "[DEBUG] get_timer_state - break_type: {:?}, break_duration: {}, break_elapsed: {}",
@@ -21,31 +19,47 @@ pub fn get_timer_state(state: State<AppState>) -> TimerStatus {
 }
 
 #[tauri::command]
+pub fn get_timer_state(state: State<AppState>) -> TimerStatus {
+    let service = state.timer_service.lock().unwrap();
+    get_timer_state_impl(&service)
+}
+
+fn update_settings_impl(service: &mut TimerService, settings: BreakConfig) {
+    service.update_config(settings);
+}
+
+#[tauri::command]
 pub fn update_settings(state: State<AppState>, settings: BreakConfig) -> Result<(), String> {
     let mut service = state.timer_service.lock().unwrap();
-    service.update_config(settings);
+    update_settings_impl(&mut service, settings);
     // Settings persistence is handled by the frontend interfacing with Tauri Store.
     Ok(())
+}
+
+fn get_settings_impl(service: &TimerService) -> BreakConfig {
+    service.config.clone()
 }
 
 #[tauri::command]
 pub fn get_settings(state: State<AppState>) -> BreakConfig {
     let service = state.timer_service.lock().unwrap();
-    service.config.clone()
+    get_settings_impl(&service)
+}
+
+fn get_statistics_impl(store: &StatsStore, days: usize) -> Vec<DailyStats> {
+    store.get_last_n_days(days)
 }
 
 #[tauri::command]
 pub fn get_statistics(state: State<AppState>, days: usize) -> Vec<DailyStats> {
     let store = state.stats_store.lock().unwrap();
-    store.get_last_n_days(days)
+    get_statistics_impl(&store, days)
 }
 
-#[tauri::command]
-pub fn record_break_taken(state: State<AppState>, break_type: String) -> Result<(), String> {
-    let mut store = state.stats_store.lock().unwrap();
+fn record_break_taken_impl(store: &mut StatsStore, break_type: &str) -> Result<(), String> {
     let today = store.get_or_create_today();
 
-    match break_type.as_str() {
+    match break_type {
         // TODO: Distinguish between prompted vs natural? Command arg?
         // For now assuming prompted if calling this command.
         "micro" => today.micro_prompted_taken += 1,
@@ -57,11 +71,15 @@ pub fn record_break_taken(state: State<AppState>, break_type: String) -> Result<
 }
 
 #[tauri::command]
-pub fn record_break_postponed(state: State<AppState>, break_type: String) -> Result<(), String> {
+pub fn record_break_taken(state: State<AppState>, break_type: String) -> Result<(), String> {
     let mut store = state.stats_store.lock().unwrap();
+    record_break_taken_impl(&mut store, &break_type)
+}
+
+fn record_break_postponed_impl(store: &mut StatsStore, break_type: &str) -> Result<(), String> {
     let today = store.get_or_create_today();
 
-    match break_type.as_str() {
+    match break_type {
         "micro" => today.micro_postponed += 1,
         "rest" => today.rest_postponed += 1,
         _ => return Err("Invalid break type".to_string()),
@@ -71,23 +89,28 @@ pub fn record_break_postponed(state: State<AppState>, break_type: String) -> Res
 }
 
 #[tauri::command]
-pub fn reset_break(state: State<AppState>, break_type: String) -> Result<(), String> {
-    let mut service = state.timer_service.lock().unwrap();
+pub fn record_break_postponed(state: State<AppState>, break_type: String) -> Result<(), String> {
+    let mut store = state.stats_store.lock().unwrap();
+    record_break_postponed_impl(&mut store, &break_type)
+}
 
-    match break_type.as_str() {
+fn reset_break_impl(service: &mut TimerService, break_type: &str) -> Result<(), String> {
+    match break_type {
         "micro" => service.reset_microbreak(),
         "rest" => service.reset_rest_break(),
         _ => return Err("Invalid break type".to_string()),
     }
-
     Ok(())
 }
 
 #[tauri::command]
-pub fn set_mode(app: tauri::AppHandle, state: State<AppState>, mode: String) -> Result<(), String> {
+pub fn reset_break(state: State<AppState>, break_type: String) -> Result<(), String> {
     let mut service = state.timer_service.lock().unwrap();
+    reset_break_impl(&mut service, &break_type)
+}
 
-    let operation_mode = match mode.as_str() {
+fn set_mode_impl(service: &mut TimerService, mode: &str) -> Result<(), String> {
+    let operation_mode = match mode {
         "Normal" => crate::timer::OperationMode::Normal,
         "Quiet" => crate::timer::OperationMode::Quiet,
         "Suspended" => crate::timer::OperationMode::Suspended,
@@ -96,6 +119,14 @@ pub fn set_mode(app: tauri::AppHandle, state: State<AppState>, mode: String) -> 
     };
 
     service.set_mode(operation_mode);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_mode(app: tauri::AppHandle, state: State<AppState>, mode: String) -> Result<(), String> {
+    let mut service = state.timer_service.lock().unwrap();
+
+    set_mode_impl(&mut service, &mode)?;
 
     if let Err(e) = app.emit("app-mode-changed", &mode) {
         eprintln!("Failed to emit mode-changed event: {}", e);
@@ -104,11 +135,8 @@ pub fn set_mode(app: tauri::AppHandle, state: State<AppState>, mode: String) -> 
     Ok(())
 }
 
-#[tauri::command]
-pub fn trigger_break(state: State<AppState>, break_type: String) -> Result<(), String> {
-    let mut service = state.timer_service.lock().unwrap();
-
-    match break_type.as_str() {
+fn trigger_break_impl(service: &mut TimerService, break_type: &str) -> Result<(), String> {
+    match break_type {
         "micro" => {
             service.trigger_microbreak();
             println!("[DEBUG] trigger_break: micro break triggered");
@@ -119,6 +147,13 @@ pub fn trigger_break(state: State<AppState>, break_type: String) -> Result<(), S
         }
         _ => return Err("Invalid break type".to_string()),
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn trigger_break(state: State<AppState>, break_type: String) -> Result<(), String> {
+    let mut service = state.timer_service.lock().unwrap();
+    trigger_break_impl(&mut service, &break_type)?;
 
     // Log the status after triggering
     let status = service.get_status();
@@ -137,7 +172,7 @@ mod tests {
     #[test]
     fn test_timer_service_operations() {
         let service = crate::timer::TimerService::new(BreakConfig::default());
-        let status = service.get_status();
+        let status = get_timer_state_impl(&service);
 
         assert_eq!(status.daily_usage, 0);
         assert_eq!(status.micro_active, 0);
@@ -149,7 +184,7 @@ mod tests {
         let mut new_config = BreakConfig::default();
         new_config.microbreak_interval = 300;
 
-        service.update_config(new_config.clone());
+        update_settings_impl(&mut service, new_config.clone());
         assert_eq!(service.config.microbreak_interval, 300);
     }
 
@@ -160,16 +195,20 @@ mod tests {
 
         today.micro_prompted_taken += 1;
 
-        let stats = store.get_last_n_days(1);
+        let stats = get_statistics_impl(&store, 1);
         assert_eq!(stats[0].micro_prompted_taken, 1);
     }
 
     #[test]
     fn test_stats_invalid_break_type() {
-        // This tests the match logic for invalid break types
-        let break_type = "invalid";
-        let is_valid = matches!(break_type, "micro" | "rest");
-        assert!(!is_valid);
+        let mut store = crate::stats::StatsStore::default();
+        let err = record_break_taken_impl(&mut store, "invalid");
+        assert!(err.is_err());
+        assert_eq!(err.unwrap_err(), "Invalid break type");
+
+        let err = record_break_postponed_impl(&mut store, "invalid");
+        assert!(err.is_err());
+        assert_eq!(err.unwrap_err(), "Invalid break type");
     }
 
     #[test]
@@ -178,17 +217,19 @@ mod tests {
         let mut service = crate::timer::TimerService::new(BreakConfig::default());
 
         // Verify default settings (default is 3 minutes = 180 seconds)
-        assert_eq!(service.config.microbreak_interval, 180);
+        let settings = get_settings_impl(&service);
+        assert_eq!(settings.microbreak_interval, 180);
 
         // Update settings
         let mut new_config = BreakConfig::default();
         new_config.microbreak_interval = 600;
         new_config.rest_interval = 4800;
-        service.update_config(new_config.clone());
+        update_settings_impl(&mut service, new_config.clone());
 
         // Verify settings were updated
-        assert_eq!(service.config.microbreak_interval, 600);
-        assert_eq!(service.config.rest_interval, 4800);
+        let settings = get_settings_impl(&service);
+        assert_eq!(settings.microbreak_interval, 600);
+        assert_eq!(settings.rest_interval, 4800);
     }
 
     #[test]
@@ -196,59 +237,78 @@ mod tests {
         let mut service = crate::timer::TimerService::new(BreakConfig::default());
 
         // Test micro break reset
-        service.trigger_microbreak();
+        trigger_break_impl(&mut service, "micro").unwrap();
         let status = service.get_status();
         assert!(status.break_type.is_some());
 
-        service.reset_microbreak();
+        reset_break_impl(&mut service, "micro").unwrap();
         let status = service.get_status();
         assert!(status.break_type.is_none());
         assert_eq!(status.break_duration, 0);
 
         // Test rest break reset
-        service.trigger_rest_break();
+        trigger_break_impl(&mut service, "rest").unwrap();
         let status = service.get_status();
         assert!(status.break_type.is_some());
 
-        service.reset_rest_break();
+        reset_break_impl(&mut service, "rest").unwrap();
         let status = service.get_status();
         assert!(status.break_type.is_none());
         assert_eq!(status.break_duration, 0);
+
+        // Test invalid
+        assert!(reset_break_impl(&mut service, "invalid").is_err());
     }
 
     #[test]
     fn test_record_break_taken_logic() {
         let mut store = crate::stats::StatsStore::default();
+
+        // Record breaks
+        record_break_taken_impl(&mut store, "micro").unwrap();
+        record_break_taken_impl(&mut store, "rest").unwrap();
+
         let today = store.get_or_create_today();
-
-        // Initialize counters
-        let initial_micro = today.micro_prompted_taken;
-        let initial_rest = today.rest_prompted_taken;
-
-        // Record breaks (simulating what the command does)
-        today.micro_prompted_taken += 1;
-        today.rest_prompted_taken += 1;
-
-        // Verify counters increased
-        assert_eq!(today.micro_prompted_taken, initial_micro + 1);
-        assert_eq!(today.rest_prompted_taken, initial_rest + 1);
+        assert_eq!(today.micro_prompted_taken, 1);
+        assert_eq!(today.rest_prompted_taken, 1);
     }
 
     #[test]
     fn test_record_break_postponed_logic() {
         let mut store = crate::stats::StatsStore::default();
+
+        // Record postponed
+        record_break_postponed_impl(&mut store, "micro").unwrap();
+        record_break_postponed_impl(&mut store, "rest").unwrap();
+
         let today = store.get_or_create_today();
+        assert_eq!(today.micro_postponed, 1);
+        assert_eq!(today.rest_postponed, 1);
+    }
 
-        // Initialize counters
-        let initial_micro = today.micro_postponed;
-        let initial_rest = today.rest_postponed;
+    #[test]
+    fn test_set_mode_logic() {
+        let mut service = crate::timer::TimerService::new(BreakConfig::default());
 
-        // Record postponed breaks (simulating what the command does)
-        today.micro_postponed += 1;
-        today.rest_postponed += 1;
+        set_mode_impl(&mut service, "Quiet").unwrap();
 
-        // Verify counters increased
-        assert_eq!(today.micro_postponed, initial_micro + 1);
-        assert_eq!(today.rest_postponed, initial_rest + 1);
+        // Verify state operation_mode logic is indirectly correct via what set_mode_impl calls,
+        // although we can't inspect private state easily here unless we add getters.
+        // But the main goal is hitting the lines in set_mode_impl.
+
+        assert!(set_mode_impl(&mut service, "Normal").is_ok());
+        assert!(set_mode_impl(&mut service, "Reading").is_ok());
+        assert!(set_mode_impl(&mut service, "Suspended").is_ok());
+        assert!(set_mode_impl(&mut service, "invalid").is_err());
+    }
+
+    #[test]
+    fn test_trigger_break_logic() {
+        let mut service = crate::timer::TimerService::new(BreakConfig::default());
+
+        trigger_break_impl(&mut service, "micro").unwrap();
+        assert!(service.get_status().break_type.is_some());
+
+        assert!(trigger_break_impl(&mut service, "invalid").is_err());
     }
 }
