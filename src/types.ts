@@ -1,4 +1,4 @@
-export type OperationMode = "Normal" | "Quiet" | "Suspended";
+export type OperationMode = "Normal" | "Quiet" | "Suspended" | "Reading";
 
 export interface BreakConfig {
   microbreakInterval: number;

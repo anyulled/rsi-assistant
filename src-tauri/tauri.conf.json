@@ -1,43 +1,49 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "RSI Assistant",
-  "version": "0.1.0",
-  "identifier": "com.rsi-assistant.app",
-  "build": {
-    "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
-    "frontendDist": "../dist"
-  },
   "app": {
-    "windows": [
-      {
-        "title": "RSI Assistant",
-        "width": 640,
-        "height": 600
-      },
-      {
-        "label": "overlay",
-        "title": "RSI Break",
-        "width": 800,
-        "height": 600,
-        "decorations": false,
-        "transparent": true,
-        "alwaysOnTop": true,
-        "visible": false,
-        "skipTaskbar": true,
-        "fullscreen": false,
-        "resizable": false
-      }
-    ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     },
-    "macOSPrivateApi": true
+    "windows": [
+      {
+        "height": 600,
+        "title": "RSI Assistant",
+        "width": 640
+      },
+      {
+        "alwaysOnTop": true,
+        "decorations": false,
+        "fullscreen": false,
+        "height": 600,
+        "label": "overlay",
+        "resizable": false,
+        "skipTaskbar": true,
+        "title": "RSI Break",
+        "transparent": true,
+        "visible": false,
+        "width": 800
+      }
+    ]
+  },
+  "build": {
+    "beforeBuildCommand": "bun run build",
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
-  }
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "targets": "all"
+  },
+  "identifier": "com.rsi-assistant.app",
+  "plugins": {
+    "updater": {
+      "active": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUwOUZBM0M4ODg5NjM3ODkKUldTSk41YUl5S09mVUhBUGdwTDNjUkV3b3VkeE9XRlRIbGFZM29mTHVoYWhrM0lCMkd1WHZOMU4K"
+    }
+  },
+  "productName": "RSI Assistant",
+  "version": "0.1.0"
 }

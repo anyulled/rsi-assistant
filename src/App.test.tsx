@@ -1,32 +1,18 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { render, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it } from "bun:test";
 import App from "./App";
 import "./setupTests";
-
-import { invoke } from "@tauri-apps/api/core";
-
-// Removed component mocks to avoid conflict with other tests
-// We will test App integration with real child components (or mock them efficiently if needed, but integration is better)
-
-import userEvent from "@testing-library/user-event";
-
-// Ensure no global mocks leak
-// We mock invoke to control useTimer's data fetching
+import { clearStoreData, mockInvoke, setWindowLabel } from "./setupTests";
 
 describe("App", () => {
   beforeEach(() => {
-    mock.restore();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (getCurrentWindow as any).mockImplementation(() => ({
-      label: "main",
-      hide: mock(() => Promise.resolve()),
-    }));
+    clearStoreData();
+    setWindowLabel("main");
   });
 
   it("renders Timer view by default", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_timer_state") {
         return Promise.resolve({
           mode: "Normal",
@@ -51,7 +37,6 @@ describe("App", () => {
     const { baseElement } = render(<App />);
     const screen = within(baseElement);
 
-    // Wait for useTimer to fetch state
     await waitFor(() => {
       expect(screen.getByRole("tab", { name: "Timer" })).toBeInTheDocument();
       expect(screen.getByText(/Mode:/)).toBeInTheDocument();
@@ -60,9 +45,7 @@ describe("App", () => {
 
   it("navigates to Settings view", async () => {
     const user = userEvent.setup();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
-      // Return just enough for components to not crash
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_timer_state")
         return Promise.resolve({
           mode: "Normal",
@@ -89,14 +72,9 @@ describe("App", () => {
   });
 
   it("renders BreakOverlay if window label is overlay", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (getCurrentWindow as any).mockImplementation(() => ({
-      label: "overlay",
-      hide: mock(() => Promise.resolve()),
-    }));
+    setWindowLabel("overlay");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_timer_state") {
         return Promise.resolve({
           microIsOverdue: true,
@@ -118,7 +96,6 @@ describe("App", () => {
     await waitFor(() => {
       expect(screen.getByText("Microbreak Time!")).toBeInTheDocument();
     });
-    // Navigation buttons should NOT be present
     expect(screen.queryByRole("tab", { name: "Timer" })).toBeNull();
   });
 });

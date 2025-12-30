@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { load } from "@tauri-apps/plugin-store";
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import type { BreakConfig } from "../types";
+import type { BreakConfig, OperationMode } from "../types";
 
 const SETTINGS_STORE = "settings.json";
 const SETTINGS_KEY = "break_config";
@@ -66,6 +67,45 @@ export function Settings() {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  // Listen for mode changes from system tray or other sources
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    console.log("[Settings] Setting up app-mode-changed listener...");
+
+    const setupListener = async () => {
+      try {
+        unlisten = await listen<string>("app-mode-changed", (event) => {
+          console.log("[Settings] Received mode change event:", event.payload);
+          const newMode = event.payload;
+
+          // Validate that the received mode is one of the expected values
+          const validModes: OperationMode[] = ["Normal", "Quiet", "Suspended", "Reading"];
+          if (!validModes.includes(newMode as OperationMode)) {
+            console.error("[Settings] Received invalid mode from event:", newMode);
+            return;
+          }
+
+          setConfig((prev) => {
+            if (!prev) return prev;
+            if (prev.mode === newMode) return prev; // No change needed
+            console.log("[Settings] Updating config mode from", prev.mode, "to", newMode);
+            return { ...prev, mode: newMode as OperationMode };
+          });
+        });
+        console.log("[Settings] Listener registered successfully");
+      } catch (err) {
+        console.error("[Settings] Failed to setup mode listener:", err);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      console.log("[Settings] Cleaning up app-mode-changed listener");
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, type, checked, value } = e.target as HTMLInputElement;
@@ -238,6 +278,7 @@ export function Settings() {
               <option value="Normal">Normal</option>
               <option value="Quiet">Quiet</option>
               <option value="Suspended">Suspended</option>
+              <option value="Reading">Reading</option>
             </select>
           </label>
         </div>

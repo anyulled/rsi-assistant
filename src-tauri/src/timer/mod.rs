@@ -2,11 +2,12 @@ use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum OperationMode {
     Normal,
     Quiet,
     Suspended,
+    Reading,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -19,8 +20,8 @@ pub enum BreakType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BreakConfig {
-    pub microbreak_interval: u64, // seconds of activity
-    pub microbreak_duration: u64, // seconds of idle required
+    pub microbreak_interval: u64,
+    pub microbreak_duration: u64,
     pub microbreak_enabled: bool,
 
     pub rest_interval: u64,
@@ -37,15 +38,15 @@ pub struct BreakConfig {
 impl Default for BreakConfig {
     fn default() -> Self {
         Self {
-            microbreak_interval: 180, // 3 min
+            microbreak_interval: 180,
             microbreak_duration: 30,
             microbreak_enabled: true,
 
-            rest_interval: 2700, // 45 min
-            rest_duration: 600,  // 10 min
+            rest_interval: 2700,
+            rest_duration: 600,
             rest_enabled: true,
 
-            daily_limit: 28800, // 8 hours
+            daily_limit: 28800,
             daily_enabled: true,
 
             warning_duration: 30,
@@ -72,7 +73,6 @@ pub struct TimerStatus {
 
     pub mode: OperationMode,
 
-    // Active break state
     pub break_type: Option<BreakType>,
     pub break_duration: u64,
     pub break_elapsed: u64,
@@ -87,7 +87,6 @@ pub struct TimerService {
 
     pub current_idle: u64,
 
-    // Active break tracking
     break_in_progress: Option<BreakType>,
     break_started_at: Option<Instant>,
 }
@@ -110,22 +109,24 @@ impl TimerService {
             return;
         }
 
-        if is_idle {
+        // In Reading mode, we treat idle time as active work time (for reading docs, etc.)
+        // So we override 'is_idle' to false if in Reading mode and actually idle.
+        // However, we still need to decide if we want to reset current_idle.
+        // If we want timers to run, we should basically behave as if !is_idle.
+        let effective_idle =
+            if self.config.mode == OperationMode::Reading { false } else { is_idle };
+
+        if effective_idle {
             self.current_idle = self.current_idle.saturating_add(1);
 
-            // Check if microbreak should be cleared
+            // Reset the timers when a successful break period (inactivity) has passed.
             if self.config.microbreak_enabled
                 && self.current_idle >= self.config.microbreak_duration
+                && self.micro_active > 0
             {
-                // If we were accumulating active time, reset it
-                if self.micro_active > 0 {
-                    self.micro_active = 0;
-                    // Note: In a real app, we might want to "cap" the idle at duration
-                    // or let it grow. Green bar usually fills then stops?
-                }
+                self.micro_active = 0;
             }
 
-            // Check if rest break should be cleared
             if self.config.rest_enabled
                 && self.current_idle >= self.config.rest_duration
                 && self.rest_active > 0
@@ -133,7 +134,6 @@ impl TimerService {
                 self.rest_active = 0;
             }
         } else {
-            // User Active
             self.current_idle = 0;
             self.daily_usage = self.daily_usage.saturating_add(1);
 
@@ -152,7 +152,6 @@ impl TimerService {
 
     pub fn reset_microbreak(&mut self) {
         self.micro_active = 0;
-        // Clear break state if micro break was in progress
         if self.break_in_progress == Some(BreakType::Micro) {
             self.break_in_progress = None;
             self.break_started_at = None;
@@ -161,7 +160,6 @@ impl TimerService {
 
     pub fn reset_rest_break(&mut self) {
         self.rest_active = 0;
-        // Clear break state if rest break was in progress
         if self.break_in_progress == Some(BreakType::Rest) {
             self.break_in_progress = None;
             self.break_started_at = None;
@@ -173,15 +171,14 @@ impl TimerService {
     }
 
     pub fn trigger_rest_break(&mut self) {
-        // Set active time just above the interval to trigger 'overdue' logic
-        // The actual overlay logic depends on the frontend seeing 'rest_is_overdue'
+        // Exceed the interval slightly to force the 'overdue' UI state and triggers.
         self.rest_active = self.config.rest_interval + 1;
         // Start the break immediately
         self.start_break(BreakType::Rest);
     }
 
     pub fn trigger_microbreak(&mut self) {
-        // Set active time just above the interval to trigger 'overdue' logic
+        // Exceed the interval slightly to force the 'overdue' UI state and triggers.
         self.micro_active = self.config.microbreak_interval + 1;
         // Start the break immediately
         self.start_break(BreakType::Micro);
@@ -381,5 +378,61 @@ mod tests {
 
         service.set_mode(OperationMode::Normal);
         assert_eq!(service.config.mode, OperationMode::Normal);
+    }
+
+    #[test]
+    fn test_reading_mode_accumulates_on_idle() {
+        let mut config = BreakConfig::default();
+        config.mode = OperationMode::Reading;
+        let mut service = TimerService::new(config);
+
+        // Tick with is_idle = true
+        for _ in 0..10 {
+            service.tick(true);
+        }
+
+        // Should accumulate active time despite being "idle" (no input)
+        assert_eq!(service.daily_usage, 10);
+        assert_eq!(service.micro_active, 10);
+        assert_eq!(service.current_idle, 0); // Should be 0 because we treated it as active
+    }
+
+    /// Integration test: Verify OperationMode serializes to PascalCase strings
+    /// that match the frontend TypeScript type definitions.
+    /// This prevents backend-frontend communication bugs due to case mismatches.
+    #[test]
+    fn test_operation_mode_serialization_contract() {
+        // These are the exact strings the frontend expects (src/types.ts: OperationMode)
+        let expected_modes = vec!["Normal", "Quiet", "Suspended", "Reading"];
+
+        let modes = vec![
+            OperationMode::Normal,
+            OperationMode::Quiet,
+            OperationMode::Suspended,
+            OperationMode::Reading,
+        ];
+
+        for (mode, expected) in modes.iter().zip(expected_modes.iter()) {
+            let serialized = serde_json::to_string(mode).unwrap();
+            // serde_json wraps strings in quotes, so we compare with quoted expected
+            assert_eq!(
+                serialized,
+                format!("\"{}\"", expected),
+                "OperationMode::{:?} should serialize to \"{}\" for frontend compatibility",
+                mode,
+                expected
+            );
+        }
+
+        // Also verify deserialization works with frontend strings
+        for (expected_mode, mode_str) in modes.iter().zip(expected_modes.iter()) {
+            let deserialized: OperationMode =
+                serde_json::from_str(&format!("\"{}\"", mode_str)).unwrap();
+            assert_eq!(
+                &deserialized, expected_mode,
+                "Frontend string \"{}\" should deserialize to OperationMode::{:?}",
+                mode_str, expected_mode
+            );
+        }
     }
 }

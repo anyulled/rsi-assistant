@@ -1,27 +1,20 @@
-import { invoke } from "@tauri-apps/api/core";
-import { load } from "@tauri-apps/plugin-store";
-import { fireEvent, render, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "../setupTests";
-import { FakeStore } from "../testUtils";
+import { FakeStore, clearStoreData, mockInvoke, mockListen } from "../setupTests";
 import { Settings } from "./Settings";
 
+// Mock the store module with a fresh store per test
+let mockStore = new FakeStore();
+mock.module("@tauri-apps/plugin-store", () => ({
+  load: () => Promise.resolve(mockStore),
+}));
+
 describe("Settings", () => {
-  let mockStore: FakeStore;
-
   beforeEach(() => {
-    // Reset mocks
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockReset();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (load as any).mockReset();
-
-    global.alert = mock(() => {});
-
-    // Default mock implementation for load
     mockStore = new FakeStore();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (load as any).mockImplementation(() => Promise.resolve(mockStore));
+    clearStoreData();
+    global.alert = mock(() => {});
   });
 
   it("loads settings from backend on mount when store is empty", async () => {
@@ -38,8 +31,7 @@ describe("Settings", () => {
       mode: "Normal",
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_settings") return Promise.resolve(backendConfig);
       return Promise.resolve(null);
     });
@@ -48,9 +40,7 @@ describe("Settings", () => {
     const screen = within(baseElement);
 
     await waitFor(() => {
-      // Check interval (180s)
       expect(screen.getByDisplayValue("180")).toBeInTheDocument();
-      // Check daily limit converted to hours: 28800 / 3600 = 8
       expect(screen.getByDisplayValue("8")).toBeInTheDocument();
     });
   });
@@ -69,10 +59,9 @@ describe("Settings", () => {
       mode: "Normal",
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_settings") return Promise.resolve(backendConfig);
-      return Promise.resolve();
+      return Promise.resolve(null);
     });
 
     const { baseElement } = render(<Settings />);
@@ -81,13 +70,11 @@ describe("Settings", () => {
 
     const form = baseElement.querySelector("form");
     if (form) fireEvent.submit(form);
-    else console.error("Form not found!");
 
     await waitFor(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const stored = await mockStore.get<any>("break_config");
+      const stored = await mockStore.get<typeof backendConfig>("break_config");
       expect(stored).toBeTruthy();
-      expect(stored.microbreakInterval).toBe(100);
+      expect(stored?.microbreakInterval).toBe(100);
     });
   });
 
@@ -99,7 +86,7 @@ describe("Settings", () => {
       restInterval: 3000,
       restDuration: 700,
       restEnabled: true,
-      dailyLimit: 7200, // 2 hours
+      dailyLimit: 7200,
       dailyEnabled: true,
       warningDuration: 30,
       mode: "Quiet",
@@ -107,41 +94,122 @@ describe("Settings", () => {
 
     await mockStore.set("break_config", storedConfig);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockImplementation((cmd: string) => {
-      // Backend has defaults
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_settings")
         return Promise.resolve({
           ...storedConfig,
           microbreakInterval: 180,
           mode: "Normal",
         });
-      return Promise.resolve();
+      return Promise.resolve(null);
     });
 
     const { baseElement } = render(<Settings />);
     const screen = within(baseElement);
 
     await waitFor(() => {
-      // Should display STORED value 250
       expect(screen.getByDisplayValue("250")).toBeInTheDocument();
-      // Should display STORED mode Quiet
-      const modeSelect = screen.getByDisplayValue("Quiet");
-      expect(modeSelect).toBeInTheDocument();
-      // Should display STORED daily limit as hours (2)
+      expect(screen.getByDisplayValue("Quiet")).toBeInTheDocument();
       expect(screen.getByDisplayValue("2")).toBeInTheDocument();
     });
   });
 
   it("has expected layout classes", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (invoke as any).mockResolvedValue({});
+    mockInvoke.mockImplementation(() => Promise.resolve({}));
     const { container } = render(<Settings />);
 
-    // Wait for form to render
     await waitFor(() => {
       const grid = container.querySelector('div[class*="md:grid-cols-2"]');
       expect(grid).toBeInTheDocument();
+    });
+  });
+
+  it("updates mode when 'app-mode-changed' event is received", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_settings") {
+        return Promise.resolve({ mode: "Normal" });
+      }
+      return Promise.resolve(null);
+    });
+
+    const { baseElement } = render(<Settings />);
+    const screen = within(baseElement);
+
+    // Verify initial state
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Normal")).toBeInTheDocument();
+    });
+
+    // Find the registered listener for 'app-mode-changed'
+    // mockListen calls are [eventName, callback]
+    const calls = mockListen.mock.calls;
+    const modeChangeCall = calls.find((call: unknown[]) => call[0] === "app-mode-changed");
+    expect(modeChangeCall).toBeDefined();
+
+    // Trigger the event
+    const callback = modeChangeCall![1] as (event: { payload: string }) => void;
+
+    await act(async () => {
+      callback({ payload: "Quiet" });
+    });
+
+    // Verify the UI updates to Reflect the new mode
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Quiet")).toBeInTheDocument();
+    });
+  });
+
+  it("handles input changes correctly", async () => {
+    const backendConfig = {
+      microbreakInterval: 180,
+      microbreakDuration: 30,
+      microbreakEnabled: true,
+      restInterval: 2700,
+      restDuration: 600,
+      restEnabled: true,
+      dailyLimit: 28800, // 8 hours
+      dailyEnabled: true,
+      warningDuration: 30,
+      mode: "Normal",
+    };
+
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_settings") return Promise.resolve(backendConfig);
+      // Mock set_mode invoke
+      if (cmd === "set_mode") return Promise.resolve(null);
+      return Promise.resolve(null);
+    });
+
+    const { baseElement } = render(<Settings />);
+    const screen = within(baseElement);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("180")).toBeInTheDocument();
+    });
+
+    // 1. Change number input
+    // Use name selector for robustness
+    const microInput = baseElement.querySelector('input[name="microbreakInterval"]')!;
+    fireEvent.change(microInput, { target: { value: "200" } });
+    expect(screen.getByDisplayValue("200")).toBeInTheDocument();
+
+    // 2. Change checkbox (microbreakEnabled)
+    const microCheckbox = baseElement.querySelector('input[name="microbreakEnabled"]') as HTMLInputElement;
+    fireEvent.click(microCheckbox);
+    expect(microCheckbox.checked).toBe(false);
+
+    // 3. Change Daily Limit (special conversion case)
+    const dailyInput = baseElement.querySelector('input[name="dailyLimit"]')!;
+    // Enter "9" hours
+    fireEvent.change(dailyInput, { target: { value: "9" } });
+    expect(screen.getByDisplayValue("9")).toBeInTheDocument();
+
+    // 4. Change Mode (should trigger invoke)
+    const modeSelect = baseElement.querySelector('select[name="mode"]')!;
+    fireEvent.change(modeSelect, { target: { value: "Reading" } });
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("set_mode", { mode: "Reading" });
     });
   });
 });

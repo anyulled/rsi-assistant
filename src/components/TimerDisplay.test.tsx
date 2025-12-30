@@ -1,7 +1,11 @@
 import type { TimerStatus } from "@/types";
-import { render, within } from "@testing-library/react";
+import { fireEvent, render, waitFor, within } from "@testing-library/react";
 import { describe, expect, it } from "bun:test";
+import { mockInvoke } from "../setupTests";
 import { TimerDisplay } from "./TimerDisplay";
+
+// Mock invoke globally is handled in setupTests, but we need to verify it's called.
+// setupTests exports mockInvoke which is the mock function used by the module mock.
 
 describe("TimerDisplay", () => {
   it("renders status correctly with circular progress", () => {
@@ -87,5 +91,59 @@ describe("TimerDisplay", () => {
     expect(within(container).getByText("300")).toBeDefined(); // microActive
     expect(within(container).getByText("150")).toBeDefined(); // restActive
     expect(within(container).getByText("1800")).toBeDefined(); // dailyUsage
+  });
+
+  it("triggers micro-break when button is clicked", async () => {
+    const mockStatus: TimerStatus = {
+      dailyUsage: 0,
+      dailyLimit: 3600,
+      microActive: 0,
+      microTarget: 600,
+      microIsOverdue: false,
+      restActive: 0,
+      restTarget: 300,
+      restIsOverdue: false,
+      currentIdle: 0,
+      mode: "Normal",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
+    };
+
+    const { getByText } = render(<TimerDisplay status={mockStatus} />);
+
+    const btn = getByText("Take Micro-break");
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("trigger_break", { breakType: "micro" });
+    });
+  });
+
+  it("triggers rest break when button is clicked", async () => {
+    const mockStatus: TimerStatus = {
+      dailyUsage: 0,
+      dailyLimit: 3600,
+      microActive: 0,
+      microTarget: 600,
+      microIsOverdue: false,
+      restActive: 0,
+      restTarget: 300,
+      restIsOverdue: false,
+      currentIdle: 0,
+      mode: "Normal",
+      breakType: null,
+      breakDuration: 0,
+      breakElapsed: 0,
+    };
+
+    const { getByText } = render(<TimerDisplay status={mockStatus} />);
+
+    const btn = getByText("Take Rest Break");
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("trigger_break", { breakType: "rest" });
+    });
   });
 });

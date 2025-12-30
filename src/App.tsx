@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect, useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTimer } from "./hooks/useTimer";
-import { useSettingsSync } from "./hooks/useSettingsSync";
+import "./App.css";
+import { Statistics } from "./components/Statistics";
 import { TimerDisplay } from "./components/TimerDisplay";
-import { Settings } from "./pages/Settings";
+import { useSettingsSync } from "./hooks/useSettingsSync";
+import { useTimer } from "./hooks/useTimer";
 import { BreakOverlay } from "./pages/BreakOverlay";
 import { Exercises } from "./pages/Exercises";
-import { Statistics } from "./components/Statistics";
-import "./App.css";
+import { Settings } from "./pages/Settings";
 
 function App() {
   useSettingsSync();
@@ -76,14 +76,7 @@ function App() {
         </TabsList>
 
         <TabsContent value="timer">
-          {/* Conditional rendering to prevent null check errors during init */}
-          {timerStatus ? (
-            <TimerDisplay status={timerStatus} />
-          ) : (
-            <div className="flex items-center justify-center h-64">
-              <span className="text-gray-600 dark:text-gray-400">Loading timer...</span>
-            </div>
-          )}
+          <TimerDisplay status={timerStatus} />
         </TabsContent>
 
         <TabsContent value="exercises">

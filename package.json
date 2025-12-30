@@ -1,20 +1,4 @@
 {
-  "name": "rsi-assistant",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "bun run dev.ts",
-    "build": "tsc && bun run build.ts",
-    "preview": "bun run dev.ts",
-    "tauri": "tauri dev",
-    "test": "bun test --preload ./src/setupTests.ts",
-    "lint": "eslint . --ext .js,.ts,.tsx",
-    "lint:fix": "eslint . --ext .js,.ts,.tsx --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "prepare": "husky"
-  },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
@@ -73,5 +57,22 @@
     "*.{json,css,md,html}": [
       "prettier --write"
     ]
-  }
+  },
+  "name": "rsi-assistant",
+  "private": true,
+  "scripts": {
+    "build": "tsc && bun run build.ts",
+    "dev": "bun run dev.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --ext .js,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.ts,.tsx --fix",
+    "prepare": "husky",
+    "preview": "bun run dev.ts",
+    "tauri": "tauri dev",
+    "test": "bun test --preload ./src/setupTests.ts",
+    "test:coverage": "bun test --preload ./src/setupTests.ts --coverage"
+  },
+  "type": "module",
+  "version": "0.1.0"
 }

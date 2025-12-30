@@ -12,10 +12,10 @@ export function BreakOverlay() {
     console.log("BreakOverlay status received:", JSON.stringify(status, null, 2));
   }, [status]);
 
-  // Derive break info from backend status (using camelCase to match JSON)
-  const breakType = status?.breakType ?? null;
-  const breakDuration = status?.breakDuration ?? 0;
-  const breakElapsed = status?.breakElapsed ?? 0;
+  // Derive break info from backend status
+  const breakType = status.breakType;
+  const breakDuration = status.breakDuration;
+  const breakElapsed = status.breakElapsed;
 
   console.log("Break state:", { breakType, breakDuration, breakElapsed });
 

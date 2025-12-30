@@ -24,8 +24,8 @@ jobs:
       - name: Build frontend
         run: bun run build
 
-      - name: Run frontend tests
-        run: bun run test
+      - name: Run tests with coverage and check threshold
+        run: ./scripts/check-coverage.sh
 
       - name: Lint frontend
         run: bunx eslint . --ext .js,.ts,.tsx
@@ -42,19 +42,19 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1.0.7
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
-          components: clippy
+          components: clippy, llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
 
       - name: Build Rust backend
         run: cargo build --release
         working-directory: src-tauri
 
-      - name: Run Rust tests
-        run: cargo test --release
-        working-directory: src-tauri
+      - name: Run tests with coverage and check threshold
+        run: ./scripts/check-rust-coverage.sh
 
       - name: Lint Rust code (clippy)
         run: cargo clippy --release -- -D warnings
