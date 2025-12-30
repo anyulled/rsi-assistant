@@ -69,8 +69,9 @@
     "lint:fix": "eslint . --ext .js,.ts,.tsx --fix",
     "prepare": "husky",
     "preview": "bun run dev.ts",
-    "tauri": "tauri dev",
+    "tauri": "tauri",
     "tauri:build": "tauri build",
+    "tauri:dev": "tauri dev",
     "test": "bun test --preload ./src/setupTests.ts",
     "test:coverage": "bun test --preload ./src/setupTests.ts --coverage"
   },
