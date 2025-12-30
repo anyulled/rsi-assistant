@@ -442,9 +442,6 @@ body {
 .h-4 {
   height: 1rem;
 }
-.h-64 {
-  height: 16rem;
-}
 .h-9 {
   height: 2.25rem;
 }
@@ -789,6 +786,9 @@ body {
 }
 .uppercase {
   text-transform: uppercase;
+}
+.lowercase {
+  text-transform: lowercase;
 }
 .leading-none {
   line-height: 1;

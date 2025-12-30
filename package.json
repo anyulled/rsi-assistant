@@ -70,6 +70,7 @@
     "prepare": "husky",
     "preview": "bun run dev.ts",
     "tauri": "tauri dev",
+    "tauri:build": "tauri build",
     "test": "bun test --preload ./src/setupTests.ts",
     "test:coverage": "bun test --preload ./src/setupTests.ts --coverage"
   },

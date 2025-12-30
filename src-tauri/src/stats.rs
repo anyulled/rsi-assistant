@@ -154,4 +154,52 @@ mod tests {
         let last_5 = store.get_last_n_days(5);
         assert_eq!(last_5.len(), 5);
     }
+
+    #[test]
+    fn test_daily_stats_serialization_contract() {
+        // DailyStats is sent to frontend via get_statistics command
+        let stats = DailyStats {
+            date: "2024-12-30".to_string(),
+            total_usage_seconds: 28800,
+            micro_prompts: 10,
+            micro_repeated_prompts: 2,
+            micro_prompted_taken: 8,
+            micro_natural_taken: 5,
+            micro_skipped: 1,
+            micro_postponed: 3,
+            rest_prompts: 5,
+            rest_repeated_prompts: 1,
+            rest_prompted_taken: 4,
+            rest_natural_taken: 2,
+            rest_skipped: 0,
+            rest_postponed: 1,
+            daily_prompts: 1,
+            daily_repeated_prompts: 0,
+            daily_prompted_taken: 1,
+            daily_natural_taken: 0,
+            daily_skipped: 0,
+            daily_postponed: 0,
+            overdue_seconds: 300,
+        };
+
+        let json = serde_json::to_string_pretty(&stats).unwrap();
+
+        // Verify ALL fields use camelCase
+        assert!(json.contains("\"date\""));
+        assert!(json.contains("\"totalUsageSeconds\""), "Should use camelCase");
+        assert!(json.contains("\"microPrompts\""), "Should use camelCase");
+        assert!(json.contains("\"microRepeatedPrompts\""), "Should use camelCase");
+        assert!(json.contains("\"microPromptedTaken\""), "Should use camelCase");
+        assert!(json.contains("\"microNaturalTaken\""), "Should use camelCase");
+        assert!(json.contains("\"microSkipped\""), "Should use camelCase");
+        assert!(json.contains("\"microPostponed\""), "Should use camelCase");
+        assert!(json.contains("\"restPrompts\""), "Should use camelCase");
+        assert!(json.contains("\"overdueSeconds\""), "Should use camelCase");
+
+        // Verify NO snake_case
+        assert!(!json.contains("total_usage"), "Should NOT use snake_case");
+        assert!(!json.contains("micro_prompts"), "Should NOT use snake_case");
+        assert!(!json.contains("rest_prompted"), "Should NOT use snake_case");
+        assert!(!json.contains("overdue_seconds"), "Should NOT use snake_case");
+    }
 }

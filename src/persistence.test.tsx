@@ -12,15 +12,15 @@ describe("Global Settings Persistence", () => {
 
   it("syncs stored settings with backend on app startup", async () => {
     const storedConfig = {
-      microbreak_interval: 555,
-      microbreak_duration: 55,
-      microbreak_enabled: true,
-      rest_interval: 5555,
-      rest_duration: 555,
-      rest_enabled: true,
-      daily_limit: 55555,
-      daily_enabled: true,
-      warning_duration: 55,
+      microbreakInterval: 555,
+      microbreakDuration: 55,
+      microbreakEnabled: true,
+      restInterval: 5555,
+      restDuration: 555,
+      restEnabled: true,
+      dailyLimit: 55555,
+      dailyEnabled: true,
+      warningDuration: 55,
       mode: "Normal",
     };
 
