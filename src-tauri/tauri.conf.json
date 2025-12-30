@@ -34,7 +34,13 @@
   },
   "bundle": {
     "active": true,
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "targets": "all"
   },
   "identifier": "com.anyulled.rsiassistant",
@@ -45,5 +51,5 @@
     }
   },
   "productName": "RSI Assistant",
-  "version": "0.2.0"
+  "version": "0.3.0"
 }
