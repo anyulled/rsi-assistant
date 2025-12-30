@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/anyulled/rsi-assistant/compare/rsi-assistant-v0.2.0...rsi-assistant-v0.3.0) (2025-12-30)
+
+
+### Features
+
+* Add property-based testing with proptest (Phase 3) ([f0de873](https://github.com/anyulled/rsi-assistant/commit/f0de873d7ceb4de9981f96f4e40fe768eace4c9f))
+
+
+### Bug Fixes
+
+* Add serialization tests and fix settings persistence ([f36b8b9](https://github.com/anyulled/rsi-assistant/commit/f36b8b90dd860d7703eabb121963de47ad678e9d))
+* correct tauri build config and bundle identifier ([8b97092](https://github.com/anyulled/rsi-assistant/commit/8b970929008c84732891901731bc3ef5f7419bd7))
+* remove useless unsigned integer &gt;= 0 comparisons ([c37d2ad](https://github.com/anyulled/rsi-assistant/commit/c37d2ade2e8468a87b7b8307a27c707b390c9209))
+
 ## [0.2.0](https://github.com/anyulled/rsi-assistant/compare/rsi-assistant-v0.1.0...rsi-assistant-v0.2.0) (2025-12-30)
 
 
