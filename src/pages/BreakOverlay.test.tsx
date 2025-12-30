@@ -150,7 +150,7 @@ describe("BreakOverlay", () => {
     expect(mockInvoke).toHaveBeenCalledWith("reset_break", { breakType: "rest" });
   });
 
-  it("uses rest_duration for rest breaks", () => {
+  it("uses restDuration for rest breaks", () => {
     mockTimerStatus = {
       microIsOverdue: false,
       restIsOverdue: true,

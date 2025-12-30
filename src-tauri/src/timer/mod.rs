@@ -428,11 +428,139 @@ mod tests {
         for (expected_mode, mode_str) in modes.iter().zip(expected_modes.iter()) {
             let deserialized: OperationMode =
                 serde_json::from_str(&format!("\"{}\"", mode_str)).unwrap();
-            assert_eq!(
-                &deserialized, expected_mode,
-                "Frontend string \"{}\" should deserialize to OperationMode::{:?}",
-                mode_str, expected_mode
-            );
+            assert_eq!(&deserialized, expected_mode);
         }
+    }
+
+    #[test]
+    fn test_deserialize_camelcase_from_frontend() {
+        // This is what the frontend sends (camelCase with PascalCase mode)
+        let json_from_frontend = r#"{
+            "microbreakInterval": 600,
+            "microbreakDuration": 30,
+            "microbreakEnabled": true,
+            "restInterval": 5400,
+            "restDuration": 600,
+            "restEnabled": true,
+            "dailyLimit": 28800,
+            "dailyEnabled": true,
+            "warningDuration": 30,
+            "mode": "Normal"
+        }"#;
+
+        let config: Result<BreakConfig, _> = serde_json::from_str(json_from_frontend);
+
+        match &config {
+            Ok(cfg) => {
+                assert_eq!(cfg.microbreak_interval, 600);
+                assert_eq!(cfg.mode, OperationMode::Normal);
+            }
+            Err(e) => {
+                panic!("Failed to deserialize camelCase JSON from frontend: {}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_serialize_to_camelcase() {
+        let config = BreakConfig {
+            microbreak_interval: 600,
+            microbreak_duration: 30,
+            microbreak_enabled: true,
+            rest_interval: 5400,
+            rest_duration: 600,
+            rest_enabled: true,
+            daily_limit: 28800,
+            daily_enabled: true,
+            warning_duration: 30,
+            mode: OperationMode::Normal,
+        };
+
+        let json = serde_json::to_string_pretty(&config).unwrap();
+        println!("Serialized JSON:\n{}", json);
+
+        //  Verify it uses camelCase
+        assert!(json.contains("microbreakInterval"));
+        assert!(json.contains(r#""mode": "Normal""#));
+        assert!(!json.contains("microbreak_interval"));
+    }
+
+    #[test]
+    fn test_timer_status_serialization_contract() {
+        // Create a complete TimerStatus with all fields
+        let status = TimerStatus {
+            daily_usage: 100,
+            daily_limit: 28800,
+            micro_active: 50,
+            micro_target: 180,
+            micro_is_overdue: false,
+            rest_active: 1500,
+            rest_target: 2700,
+            rest_is_overdue: false,
+            current_idle: 10,
+            mode: OperationMode::Normal,
+            break_type: Some(BreakType::Micro),
+            break_duration: 30,
+            break_elapsed: 15,
+        };
+
+        let json = serde_json::to_string_pretty(&status).unwrap();
+
+        // Verify ALL fields use camelCase (this is sent to frontend)
+        assert!(json.contains("\"dailyUsage\""), "Should serialize dailyUsage in camelCase");
+        assert!(json.contains("\"dailyLimit\""), "Should serialize dailyLimit in camelCase");
+        assert!(json.contains("\"microActive\""), "Should serialize microActive in camelCase");
+        assert!(json.contains("\"microTarget\""), "Should serialize microTarget in camelCase");
+        assert!(
+            json.contains("\"microIsOverdue\""),
+            "Should serialize microIsOverdue in camelCase"
+        );
+        assert!(json.contains("\"restActive\""), "Should serialize restActive in camelCase");
+        assert!(json.contains("\"restTarget\""), "Should serialize restTarget in camelCase");
+        assert!(json.contains("\"restIsOverdue\""), "Should serialize restIsOverdue in camelCase");
+        assert!(json.contains("\"currentIdle\""), "Should serialize currentIdle in camelCase");
+        assert!(json.contains("\"breakType\""), "Should serialize breakType in camelCase");
+        assert!(json.contains("\"breakDuration\""), "Should serialize breakDuration in camelCase");
+        assert!(json.contains("\"breakElapsed\""), "Should serialize breakElapsed in camelCase");
+
+        // Verify NO snake_case (would break frontend)
+        assert!(!json.contains("daily_usage"), "Should NOT use snake_case");
+        assert!(!json.contains("micro_active"), "Should NOT use snake_case");
+        assert!(!json.contains("break_type"), "Should NOT use snake_case");
+    }
+
+    #[test]
+    fn test_break_config_round_trip() {
+        // Test that we can serialize and deserialize without data loss
+        let original = BreakConfig {
+            microbreak_interval: 600,
+            microbreak_duration: 45,
+            microbreak_enabled: true,
+            rest_interval: 4800,
+            rest_duration: 300,
+            rest_enabled: false,
+            daily_limit: 32400,
+            daily_enabled: true,
+            warning_duration: 60,
+            mode: OperationMode::Quiet,
+        };
+
+        // Serialize to JSON (what backend sends to frontend)
+        let json = serde_json::to_string(&original).unwrap();
+
+        // Deserialize back (what backend receives from frontend)
+        let deserialized: BreakConfig = serde_json::from_str(&json).unwrap();
+
+        // Verify all fields survived the round trip
+        assert_eq!(original.microbreak_interval, deserialized.microbreak_interval);
+        assert_eq!(original.microbreak_duration, deserialized.microbreak_duration);
+        assert_eq!(original.microbreak_enabled, deserialized.microbreak_enabled);
+        assert_eq!(original.rest_interval, deserialized.rest_interval);
+        assert_eq!(original.rest_duration, deserialized.rest_duration);
+        assert_eq!(original.rest_enabled, deserialized.rest_enabled);
+        assert_eq!(original.daily_limit, deserialized.daily_limit);
+        assert_eq!(original.daily_enabled, deserialized.daily_enabled);
+        assert_eq!(original.warning_duration, deserialized.warning_duration);
+        assert_eq!(original.mode, deserialized.mode);
     }
 }
