@@ -564,3 +564,92 @@ mod tests {
         assert_eq!(original.mode, deserialized.mode);
     }
 }
+
+// Property-Based Tests - Generate thousands of random inputs to verify invariants
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use proptest::prelude::*;
+
+    // Strategy: Generate valid BreakConfig with reasonable ranges
+    fn break_config_strategy() -> impl Strategy<Value = BreakConfig> {
+        (
+            1u64..=3600,     // microbreak_interval: 1 sec to 1 hour
+            10u64..=300,     // microbreak_duration: 10 sec to 5 min
+            any::<bool>(),   // microbreak_enabled
+            60u64..=7200,    // rest_interval: 1 min to 2 hours
+            60u64..=1800,    // rest_duration: 1 min to 30 min
+            any::<bool>(),   // rest_enabled
+            3600u64..=86400, // daily_limit: 1 hour to 24 hours
+            any::<bool>(),   // daily_enabled
+            5u64..=120,      // warning_duration: 5 sec to 2 min
+            prop_oneof![
+                Just(OperationMode::Normal),
+                Just(OperationMode::Quiet),
+                Just(OperationMode::Suspended),
+                Just(OperationMode::Reading),
+            ],
+        )
+            .prop_map(
+                |(
+                    micro_int,
+                    micro_dur,
+                    micro_en,
+                    rest_int,
+                    rest_dur,
+                    rest_en,
+                    daily_lim,
+                    daily_en,
+                    warn_dur,
+                    mode,
+                )| BreakConfig {
+                    microbreak_interval: micro_int,
+                    microbreak_duration: micro_dur,
+                    microbreak_enabled: micro_en,
+                    rest_interval: rest_int,
+                    rest_duration: rest_dur,
+                    rest_enabled: rest_en,
+                    daily_limit: daily_lim,
+                    daily_enabled: daily_en,
+                    warning_duration: warn_dur,
+                    mode,
+                },
+            )
+    }
+
+    proptest! {
+        #[test]
+        fn prop_config_serialization_roundtrip(config in break_config_strategy()) {
+            // Property: Any valid config survives serialization round-trip
+            let json = serde_json::to_string(&config).unwrap();
+            let deserialized: BreakConfig = serde_json::from_str(&json).unwrap();
+
+            prop_assert_eq!(config.microbreak_interval, deserialized.microbreak_interval);
+            prop_assert_eq!(config.mode, deserialized.mode);
+        }
+
+        #[test]
+        fn prop_config_json_always_camelcase(config in break_config_strategy()) {
+            // Property: Serialized JSON MUST ALWAYS use camelCase
+            let json = serde_json::to_string(&config).unwrap();
+
+            prop_assert!(json.contains("microbreakInterval"));
+            prop_assert!(!json.contains("microbreak_interval"));
+        }
+
+        #[test]
+        fn prop_timer_never_negative(config in break_config_strategy()) {
+            // Property: Timer counters never go negative
+            let mut service = TimerService::new(config);
+
+            for _ in 0..50 {
+                service.tick(false);
+            }
+
+            let status = service.get_status();
+            prop_assert!(status.micro_active >= 0);
+            prop_assert!(status.rest_active >= 0);
+            prop_assert!(status.daily_usage >= 0);
+        }
+    }
+}
