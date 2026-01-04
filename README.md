@@ -2,6 +2,10 @@
 
 ![RSI Recovery Assistant](public/banner.jpeg)
 
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/anyulled/rsi-assistant)
+![GitHub language count](https://img.shields.io/github/languages/count/anyulled/rsi-assistant)
+![GitHub language count](https://img.shields.io/github/languages/count/anyulled/rsi-assistant)
+
 A native macOS menu bar application designed to help prevent Repetitive Strain Injury (RSI) using smart break timers and idle detection. Built with [Tauri](https://tauri.app), [React](https://react.dev), and [Rust](https://www.rust-lang.org).
 
 ## Features

@@ -1,29 +1,29 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "bun:test";
-import { DEFAULT_TIMER_STATUS, mockInvoke } from "../setupTests";
+import { getDefaultTimerStatus, mockInvoke } from "../setupTests";
 import type { TimerStatus } from "../types";
 import { useTimer } from "./useTimer";
 
 describe("useTimer", () => {
   beforeEach(() => {
-    // Mocks are reset in afterEach of setupTests
-    // Ensure mockInvoke is in a clean state
     mockInvoke.mockClear();
   });
 
-  it.skip("initializes with default status (not null)", () => {
-    // The setupTests default mockInvoke returns DEFAULT_TIMER_STATUS immediately.
-    // However, useState initialization happens before effects run.
-    // So result.current should start as DEFAULT_TIMER_STATUS.
-    // Even if effect runs and updates it, it updates it to the SAME value (DEFAULT_TIMER_STATUS).
+  it("initializes with default status (not null)", async () => {
+    let result: { current: TimerStatus };
 
-    const { result } = renderHook(() => useTimer());
-    expect(result.current).toEqual(DEFAULT_TIMER_STATUS);
+    await act(async () => {
+      const hook = renderHook(() => useTimer());
+      result = hook.result;
+    });
+
+    // Compare by value using fresh factory result
+    expect(result!.current).toEqual(getDefaultTimerStatus());
   });
 
-  it.skip("updates status when backend returns data", async () => {
+  it("updates status when backend returns data", async () => {
     const backendStatus: TimerStatus = {
-      ...DEFAULT_TIMER_STATUS,
+      ...getDefaultTimerStatus(),
       dailyUsage: 100,
       mode: "Quiet",
     };
@@ -35,12 +35,17 @@ describe("useTimer", () => {
       return Promise.resolve(null);
     });
 
-    const { result } = renderHook(() => useTimer());
+    let result: { current: TimerStatus };
 
-    // Wait for the update to happen
+    await act(async () => {
+      const hook = renderHook(() => useTimer());
+      result = hook.result;
+    });
+
     await waitFor(
       () => {
-        expect(result.current).toEqual(backendStatus);
+        expect(result!.current.dailyUsage).toBe(100);
+        expect(result!.current.mode).toBe("Quiet");
       },
       { timeout: 1000 }
     );

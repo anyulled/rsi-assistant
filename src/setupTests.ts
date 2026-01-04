@@ -15,6 +15,8 @@ import {
   setWindowLabel,
 } from "./testUtils";
 
+console.log(" == setupTests.ts ==");
+
 // Re-export everything from testUtils for backward compatibility
 export * from "./testUtils";
 

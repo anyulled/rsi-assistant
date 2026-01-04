@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 // Default status prevents null checks throughout the codebase
-import { DEFAULT_TIMER_STATUS } from "@/constants";
+import { DEFAULT_TIMER_STATUS } from "../constants";
 
 export function useTimer(): TimerStatus {
   const [status, setStatus] = useState<TimerStatus>(DEFAULT_TIMER_STATUS);
