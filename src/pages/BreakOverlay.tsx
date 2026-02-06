@@ -1,23 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
 import { useTimer } from "@/hooks/useTimer";
 
 export function BreakOverlay() {
   const status = useTimer();
 
-  // Debug logging to understand what we're receiving
-  useEffect(() => {
-    console.log("BreakOverlay status received:", JSON.stringify(status, null, 2));
-  }, [status]);
-
   // Derive break info from backend status
   const breakType = status.breakType;
   const breakDuration = status.breakDuration;
   const breakElapsed = status.breakElapsed;
-
-  console.log("Break state:", { breakType, breakDuration, breakElapsed });
 
   // Determine message based on break type
   const message = breakType === "rest" ? "Rest Break Time!" : breakType === "micro" ? "Microbreak Time!" : "Time for a break!";
