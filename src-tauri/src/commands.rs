@@ -63,23 +63,14 @@ fn record_break_taken_impl(
 ) -> Result<(), String> {
     let today = store.get_or_create_today();
 
-    match break_type {
-        "micro" => {
-            if was_prompted {
-                today.micro_prompted_taken += 1;
-            } else {
-                today.micro_natural_taken += 1;
-            }
-        }
-        "rest" => {
-            if was_prompted {
-                today.rest_prompted_taken += 1;
-            } else {
-                today.rest_natural_taken += 1;
-            }
-        }
+    let field_to_increment = match (break_type, was_prompted) {
+        ("micro", true) => &mut today.micro_prompted_taken,
+        ("micro", false) => &mut today.micro_natural_taken,
+        ("rest", true) => &mut today.rest_prompted_taken,
+        ("rest", false) => &mut today.rest_natural_taken,
         _ => return Err("Invalid break type".to_string()),
-    }
+    };
+    *field_to_increment += 1;
 
     Ok(())
 }

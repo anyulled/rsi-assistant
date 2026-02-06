@@ -83,8 +83,11 @@ mod tests {
     #[test]
     fn test_record_break_taken_natural() {
         let state = create_test_state();
-        record_break_taken(tauri::State::from(&state), "micro".to_string(), false).unwrap();
-        record_break_taken(tauri::State::from(&state), "rest".to_string(), false).unwrap();
+        let result = record_break_taken(tauri::State::from(&state), "micro".to_string(), false);
+        assert!(result.is_ok());
+
+        let result = record_break_taken(tauri::State::from(&state), "rest".to_string(), false);
+        assert!(result.is_ok());
 
         let stats = get_statistics(tauri::State::from(&state), 1);
         assert_eq!(stats[0].micro_natural_taken, 1);
