@@ -55,10 +55,12 @@ export function BreakOverlay() {
   // Auto-complete break when duration is reached
   // This is now handled by watching the backend elapsed time
   const isBreakComplete = breakDuration > 0 && breakElapsed >= breakDuration;
-  if (isBreakComplete && breakType) {
-    // Call handleBreakComplete without blocking render
-    handleBreakComplete();
-  }
+
+  useEffect(() => {
+    if (isBreakComplete) {
+      handleBreakComplete();
+    }
+  }, [isBreakComplete, handleBreakComplete]);
 
   // Calculate progress and remaining time from backend data
   const remainingSeconds = Math.max(0, breakDuration - breakElapsed);
