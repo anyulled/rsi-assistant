@@ -179,4 +179,40 @@ describe("BreakOverlay", () => {
 
     expect(screen.getByText("Time for a break!")).toBeInTheDocument();
   });
+
+  it("executes completion logic efficiently without render loops", async () => {
+    // Initial state: almost complete
+    mockTimerStatus = {
+      breakType: "micro",
+      breakDuration: 10,
+      breakElapsed: 9,
+    };
+
+    const { rerender } = render(<BreakOverlay />);
+
+    // Should not have called completion yet
+    expect(mockInvoke).not.toHaveBeenCalledWith("record_break_taken", expect.anything());
+
+    // Update to complete
+    mockTimerStatus = {
+      breakType: "micro",
+      breakDuration: 10,
+      breakElapsed: 10,
+    };
+    rerender(<BreakOverlay />);
+
+    // Should have called completion
+    // We wait a tick because handleBreakComplete is async and called in useEffect
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(mockInvoke).toHaveBeenCalledWith("record_break_taken", { breakType: "micro" });
+
+    mockInvoke.mockClear();
+
+    // Re-render with same state
+    rerender(<BreakOverlay />);
+
+    // Should NOT call completion again (efficiency check)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(mockInvoke).not.toHaveBeenCalledWith("record_break_taken", expect.anything());
+  });
 });
