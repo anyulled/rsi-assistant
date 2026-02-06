@@ -1,4 +1,4 @@
-import * as matchers from "@testing-library/jest-dom/matchers";
+import * as matchers from "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
 import { afterEach, expect, mock } from "bun:test";
 import { Window } from "happy-dom";
