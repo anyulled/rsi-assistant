@@ -62,7 +62,7 @@ fn delete_statistics_impl(store: &mut StatsStore) {
 
 #[tauri::command]
 pub fn delete_statistics(state: State<AppState>) -> Result<(), String> {
-    let mut store = state.stats_store.lock().unwrap();
+    let mut store = state.stats_store.lock().map_err(|e| e.to_string())?;
     delete_statistics_impl(&mut store);
     Ok(())
 }
