@@ -202,11 +202,9 @@ describe("BreakOverlay", () => {
     rerender(<BreakOverlay />);
 
     // Should have called completion
-    // Should have called completion
-    // We wait for the async side effect to complete
-    await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("record_break_taken", { breakType: "micro" });
-    });
+    // We wait a tick because handleBreakComplete is async and called in useEffect
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(mockInvoke).toHaveBeenCalledWith("record_break_taken", { breakType: "micro" });
 
     mockInvoke.mockClear();
 
@@ -214,6 +212,7 @@ describe("BreakOverlay", () => {
     rerender(<BreakOverlay />);
 
     // Should NOT call completion again (efficiency check)
+    await new Promise((resolve) => setTimeout(resolve, 10));
     expect(mockInvoke).not.toHaveBeenCalledWith("record_break_taken", expect.anything());
   });
 });
