@@ -35,7 +35,7 @@ export function BreakOverlay() {
     if (!breakType) return;
 
     try {
-      await invoke("record_break_taken", { breakType });
+      await invoke("record_break_taken", { breakType, wasPrompted: true });
       await invoke("reset_break", { breakType });
     } catch (error) {
       console.error("Failed to record break completion:", error);

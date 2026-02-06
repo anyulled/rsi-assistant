@@ -56,14 +56,28 @@ pub fn get_statistics(state: State<AppState>, days: usize) -> Vec<DailyStats> {
     get_statistics_impl(&store, days)
 }
 
-fn record_break_taken_impl(store: &mut StatsStore, break_type: &str) -> Result<(), String> {
+fn record_break_taken_impl(
+    store: &mut StatsStore,
+    break_type: &str,
+    was_prompted: bool,
+) -> Result<(), String> {
     let today = store.get_or_create_today();
 
     match break_type {
-        // TODO: Distinguish between prompted vs natural? Command arg?
-        // For now assuming prompted if calling this command.
-        "micro" => today.micro_prompted_taken += 1,
-        "rest" => today.rest_prompted_taken += 1,
+        "micro" => {
+            if was_prompted {
+                today.micro_prompted_taken += 1;
+            } else {
+                today.micro_natural_taken += 1;
+            }
+        }
+        "rest" => {
+            if was_prompted {
+                today.rest_prompted_taken += 1;
+            } else {
+                today.rest_natural_taken += 1;
+            }
+        }
         _ => return Err("Invalid break type".to_string()),
     }
 
@@ -71,9 +85,13 @@ fn record_break_taken_impl(store: &mut StatsStore, break_type: &str) -> Result<(
 }
 
 #[tauri::command]
-pub fn record_break_taken(state: State<AppState>, break_type: String) -> Result<(), String> {
+pub fn record_break_taken(
+    state: State<AppState>,
+    break_type: String,
+    was_prompted: bool,
+) -> Result<(), String> {
     let mut store = state.stats_store.lock().unwrap();
-    record_break_taken_impl(&mut store, &break_type)
+    record_break_taken_impl(&mut store, &break_type, was_prompted)
 }
 
 fn record_break_postponed_impl(store: &mut StatsStore, break_type: &str) -> Result<(), String> {
@@ -202,7 +220,7 @@ mod tests {
     #[test]
     fn test_stats_invalid_break_type() {
         let mut store = crate::stats::StatsStore::default();
-        let err = record_break_taken_impl(&mut store, "invalid");
+        let err = record_break_taken_impl(&mut store, "invalid", true);
         assert!(err.is_err());
         assert_eq!(err.unwrap_err(), "Invalid break type");
 
@@ -265,8 +283,8 @@ mod tests {
         let mut store = crate::stats::StatsStore::default();
 
         // Record breaks
-        record_break_taken_impl(&mut store, "micro").unwrap();
-        record_break_taken_impl(&mut store, "rest").unwrap();
+        record_break_taken_impl(&mut store, "micro", true).unwrap();
+        record_break_taken_impl(&mut store, "rest", true).unwrap();
 
         let today = store.get_or_create_today();
         assert_eq!(today.micro_prompted_taken, 1);
