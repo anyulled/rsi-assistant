@@ -70,14 +70,29 @@ impl Default for DailyStats {
 #[serde(rename_all = "camelCase")]
 pub struct StatsStore {
     pub stats: HashMap<String, DailyStats>, // Key: date (YYYY-MM-DD)
+    #[serde(skip)]
+    pub last_seen_date: Option<chrono::NaiveDate>,
+    #[serde(skip)]
+    pub last_seen_date_str: String,
 }
 
 impl StatsStore {
     pub fn get_or_create_today(&mut self) -> &mut DailyStats {
-        let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+        let now = chrono::Local::now().date_naive();
+        if self.last_seen_date != Some(now) {
+            let today_str = now.format("%Y-%m-%d").to_string();
+            self.last_seen_date = Some(now);
+            self.last_seen_date_str = today_str;
+        }
+
+        let today = &self.last_seen_date_str;
+        if self.stats.contains_key(today) {
+            return self.stats.get_mut(today).unwrap();
+        }
+
         self.stats
             .entry(today.clone())
-            .or_insert_with(|| DailyStats { date: today, ..Default::default() })
+            .or_insert_with(|| DailyStats { date: today.clone(), ..Default::default() })
     }
 
     pub fn get_last_n_days(&self, n: usize) -> Vec<DailyStats> {
