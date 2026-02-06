@@ -10,7 +10,8 @@ use crate::timer::{BreakConfig, TimerService};
 use chrono::Datelike;
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::image::Image;
+use tauri::menu::{IconMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Listener, Manager};
 use tokio::time::sleep;
@@ -81,13 +82,49 @@ pub fn run() {
 
             use tauri::menu::CheckMenuItem;
             use tauri_plugin_dialog::DialogExt;
-            // TODO: Use IconMenuItem once we have distinct icons. For now using standard MenuItem with placeholders where icons would be.
-            let show_i = MenuItem::with_id(app, "show", "Show RSI Assistant", true, None::<&str>)?;
-            let rest_break_i =
-                MenuItem::with_id(app, "rest_break", "Take Rest Break Now", true, None::<&str>)?;
-            let exercises_i = MenuItem::with_id(app, "exercises", "Exercises", true, None::<&str>)?;
-            let statistics_i =
-                MenuItem::with_id(app, "statistics", "Statistics", true, None::<&str>)?;
+
+            let show_icon = Image::from_bytes(include_bytes!("../icons/menu_show.png")).unwrap();
+            let show_i = IconMenuItem::with_id(
+                app,
+                "show",
+                "Show RSI Assistant",
+                true,
+                Some(show_icon),
+                None::<&str>,
+            )?;
+
+            let rest_break_icon =
+                Image::from_bytes(include_bytes!("../icons/menu_rest.png")).unwrap();
+            let rest_break_i = IconMenuItem::with_id(
+                app,
+                "rest_break",
+                "Take Rest Break Now",
+                true,
+                Some(rest_break_icon),
+                None::<&str>,
+            )?;
+
+            let exercises_icon =
+                Image::from_bytes(include_bytes!("../icons/menu_exercises.png")).unwrap();
+            let exercises_i = IconMenuItem::with_id(
+                app,
+                "exercises",
+                "Exercises",
+                true,
+                Some(exercises_icon),
+                None::<&str>,
+            )?;
+
+            let statistics_icon =
+                Image::from_bytes(include_bytes!("../icons/menu_stats.png")).unwrap();
+            let statistics_i = IconMenuItem::with_id(
+                app,
+                "statistics",
+                "Statistics",
+                true,
+                Some(statistics_icon),
+                None::<&str>,
+            )?;
 
             // Start in Normal mode as the default behavior.
             let mode_normal_i =
