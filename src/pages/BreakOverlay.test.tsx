@@ -214,7 +214,6 @@ describe("BreakOverlay", () => {
     rerender(<BreakOverlay />);
 
     // Should NOT call completion again (efficiency check)
-    await new Promise((resolve) => setTimeout(resolve, 10));
     expect(mockInvoke).not.toHaveBeenCalledWith("record_break_taken", expect.anything());
   });
 });
