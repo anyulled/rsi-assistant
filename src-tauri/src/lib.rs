@@ -305,6 +305,7 @@ pub fn run() {
 
                 let mut was_micro_overdue = false;
                 let mut was_rest_overdue = false;
+                let mut is_overlay_visible: Option<bool> = None;
 
                 loop {
                     sleep(Duration::from_secs(1)).await;
@@ -373,12 +374,18 @@ pub fn run() {
                         let should_show = status.break_type.is_some();
 
                         if should_show {
-                            // Ensure it's visible and on top
-                            let _ = overlay.show();
-                            let _ = overlay.set_focus();
-                            let _ = overlay.set_always_on_top(true);
+                            if is_overlay_visible != Some(true) {
+                                // Ensure it's visible and on top
+                                let _ = overlay.show();
+                                let _ = overlay.set_focus();
+                                let _ = overlay.set_always_on_top(true);
+                                is_overlay_visible = Some(true);
+                            }
                         } else {
-                            let _ = overlay.hide();
+                            if is_overlay_visible != Some(false) {
+                                let _ = overlay.hide();
+                                is_overlay_visible = Some(false);
+                            }
                         }
                     }
                 }
