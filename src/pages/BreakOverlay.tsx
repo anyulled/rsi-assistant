@@ -64,10 +64,10 @@ export function BreakOverlay() {
   const isBreakComplete = breakDuration > 0 && breakElapsed >= breakDuration;
 
   useEffect(() => {
-    if (isBreakComplete && breakType) {
+    if (isBreakComplete) {
       handleBreakComplete();
     }
-  }, [isBreakComplete, breakType, handleBreakComplete]);
+  }, [isBreakComplete, handleBreakComplete]);
 
   // Calculate progress and remaining time from backend data
   const remainingSeconds = Math.max(0, breakDuration - breakElapsed);
