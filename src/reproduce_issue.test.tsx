@@ -1,7 +1,7 @@
 import { render, cleanup } from "@testing-library/react";
 import { describe, it, expect, mock, afterEach } from "bun:test";
 import App from "./App";
-import { mockListen, mockInvoke } from "./setupTests";
+import { mockListen, mockInvoke, getDefaultTimerStatus } from "./setupTests";
 
 describe("App Listener Leak", () => {
   afterEach(() => {
@@ -12,21 +12,7 @@ describe("App Listener Leak", () => {
     // Mock get_timer_state to avoid errors during rendering
     mockInvoke.mockImplementation((cmd: string) => {
         if (cmd === "get_timer_state") {
-            return Promise.resolve({
-                mode: "Normal",
-                microActive: 0,
-                microTarget: 100,
-                microIsOverdue: false,
-                restActive: 0,
-                restTarget: 1000,
-                restIsOverdue: false,
-                dailyUsage: 0,
-                dailyLimit: 10000,
-                currentIdle: 0,
-                breakType: null,
-                breakDuration: 0,
-                breakElapsed: 0,
-            });
+            return Promise.resolve(getDefaultTimerStatus());
         }
         if (cmd === "get_settings") return Promise.resolve({});
         return Promise.resolve(null);

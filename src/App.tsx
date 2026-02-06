@@ -36,7 +36,7 @@ function App() {
     });
 
     return () => {
-      unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
+      unlistenPromise.then((unlisten) => unlisten());
     };
   }, []);
 
