@@ -85,6 +85,10 @@ impl StatsStore {
         dates.sort_by(|a, b| b.cmp(a)); // Sort descending (newest first)
         dates.into_iter().take(n).filter_map(|date| self.stats.get(date).cloned()).collect()
     }
+
+    pub fn clear(&mut self) {
+        self.stats.clear();
+    }
 }
 
 #[cfg(test)]
@@ -153,6 +157,16 @@ mod tests {
 
         let last_5 = store.get_last_n_days(5);
         assert_eq!(last_5.len(), 5);
+    }
+
+    #[test]
+    fn test_stats_store_clear() {
+        let mut store = StatsStore::default();
+        store.get_or_create_today();
+        assert!(!store.stats.is_empty());
+
+        store.clear();
+        assert!(store.stats.is_empty());
     }
 
     #[test]

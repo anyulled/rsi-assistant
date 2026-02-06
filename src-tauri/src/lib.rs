@@ -372,6 +372,7 @@ pub fn run() {
             commands::update_settings,
             commands::get_settings,
             commands::get_statistics,
+            commands::delete_statistics,
             commands::record_break_taken,
             commands::record_break_postponed,
             commands::reset_break,
