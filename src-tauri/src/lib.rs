@@ -362,11 +362,9 @@ pub fn run() {
                                 let _ = overlay.set_always_on_top(true);
                                 is_overlay_visible = Some(true);
                             }
-                        } else {
-                            if is_overlay_visible != Some(false) {
-                                let _ = overlay.hide();
-                                is_overlay_visible = Some(false);
-                            }
+                        } else if is_overlay_visible != Some(false) {
+                            let _ = overlay.hide();
+                            is_overlay_visible = Some(false);
                         }
                     }
                 }
