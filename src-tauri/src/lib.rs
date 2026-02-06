@@ -83,48 +83,30 @@ pub fn run() {
             use tauri::menu::CheckMenuItem;
             use tauri_plugin_dialog::DialogExt;
 
-            let show_icon = Image::from_bytes(include_bytes!("../icons/menu_show.png")).unwrap();
-            let show_i = IconMenuItem::with_id(
+            macro_rules! create_icon_menu_item {
+                ($app:expr, $id:expr, $text:expr, $icon_path:literal) => {{
+                    let icon = Image::from_bytes(include_bytes!($icon_path))
+                        .expect(&format!("Failed to load icon: {}", $icon_path));
+                    IconMenuItem::with_id($app, $id, $text, true, Some(icon), None::<&str>)
+                }};
+            }
+
+            let show_i = create_icon_menu_item!(
                 app,
                 "show",
                 "Show RSI Assistant",
-                true,
-                Some(show_icon),
-                None::<&str>,
+                "../icons/menu_show.png"
             )?;
-
-            let rest_break_icon =
-                Image::from_bytes(include_bytes!("../icons/menu_rest.png")).unwrap();
-            let rest_break_i = IconMenuItem::with_id(
+            let rest_break_i = create_icon_menu_item!(
                 app,
                 "rest_break",
                 "Take Rest Break Now",
-                true,
-                Some(rest_break_icon),
-                None::<&str>,
+                "../icons/menu_rest.png"
             )?;
-
-            let exercises_icon =
-                Image::from_bytes(include_bytes!("../icons/menu_exercises.png")).unwrap();
-            let exercises_i = IconMenuItem::with_id(
-                app,
-                "exercises",
-                "Exercises",
-                true,
-                Some(exercises_icon),
-                None::<&str>,
-            )?;
-
-            let statistics_icon =
-                Image::from_bytes(include_bytes!("../icons/menu_stats.png")).unwrap();
-            let statistics_i = IconMenuItem::with_id(
-                app,
-                "statistics",
-                "Statistics",
-                true,
-                Some(statistics_icon),
-                None::<&str>,
-            )?;
+            let exercises_i =
+                create_icon_menu_item!(app, "exercises", "Exercises", "../icons/menu_exercises.png")?;
+            let statistics_i =
+                create_icon_menu_item!(app, "statistics", "Statistics", "../icons/menu_stats.png")?;
 
             // Start in Normal mode as the default behavior.
             let mode_normal_i =
