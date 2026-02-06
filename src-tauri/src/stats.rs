@@ -86,8 +86,9 @@ impl StatsStore {
         }
 
         let today = &self.last_seen_date_str;
-        if self.stats.contains_key(today) {
-            return self.stats.get_mut(today).unwrap();
+        if let Some(stats) = self.stats.get_mut(today) {
+            return stats;
+        }
         }
 
         self.stats
