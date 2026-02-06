@@ -373,17 +373,16 @@ pub fn run() {
                         // Show overlay when a break is in progress
                         let should_show = status.break_type.is_some();
 
-                        if should_show {
-                            if is_overlay_visible != Some(true) {
+                        if is_overlay_visible.map_or(true, |v| v != should_show) {
+                            if should_show {
                                 // Ensure it's visible and on top
                                 let _ = overlay.show();
                                 let _ = overlay.set_focus();
                                 let _ = overlay.set_always_on_top(true);
-                                is_overlay_visible = Some(true);
+                            } else {
+                                let _ = overlay.hide();
                             }
-                        } else if is_overlay_visible != Some(false) {
-                            let _ = overlay.hide();
-                            is_overlay_visible = Some(false);
+                            is_overlay_visible = Some(should_show);
                         }
                     }
                 }
