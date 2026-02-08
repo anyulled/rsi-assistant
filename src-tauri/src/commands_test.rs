@@ -60,30 +60,44 @@ mod tests {
     #[test]
     fn test_record_break_taken_micro() {
         let state = create_test_state();
-        let result = record_break_taken(tauri::State::from(&state), "micro".to_string());
+        let result = record_break_taken(tauri::State::from(&state), "micro".to_string(), true);
 
         assert!(result.is_ok());
 
         let stats = get_statistics(tauri::State::from(&state), 1);
         assert_eq!(stats.len(), 1);
-        assert_eq!(stats[0].microbreaks_taken, 1);
+        assert_eq!(stats[0].micro_prompted_taken, 1);
     }
 
     #[test]
     fn test_record_break_taken_rest() {
         let state = create_test_state();
-        let result = record_break_taken(tauri::State::from(&state), "rest".to_string());
+        let result = record_break_taken(tauri::State::from(&state), "rest".to_string(), true);
 
         assert!(result.is_ok());
 
         let stats = get_statistics(tauri::State::from(&state), 1);
-        assert_eq!(stats[0].rest_breaks_taken, 1);
+        assert_eq!(stats[0].rest_prompted_taken, 1);
+    }
+
+    #[test]
+    fn test_record_break_taken_natural() {
+        let state = create_test_state();
+        let result = record_break_taken(tauri::State::from(&state), "micro".to_string(), false);
+        assert!(result.is_ok());
+
+        let result = record_break_taken(tauri::State::from(&state), "rest".to_string(), false);
+        assert!(result.is_ok());
+
+        let stats = get_statistics(tauri::State::from(&state), 1);
+        assert_eq!(stats[0].micro_natural_taken, 1);
+        assert_eq!(stats[0].rest_natural_taken, 1);
     }
 
     #[test]
     fn test_record_break_taken_invalid() {
         let state = create_test_state();
-        let result = record_break_taken(tauri::State::from(&state), "invalid".to_string());
+        let result = record_break_taken(tauri::State::from(&state), "invalid".to_string(), true);
 
         assert!(result.is_err());
     }
@@ -96,7 +110,7 @@ mod tests {
         assert!(result.is_ok());
 
         let stats = get_statistics(tauri::State::from(&state), 1);
-        assert_eq!(stats[0].microbreaks_postponed, 1);
+        assert_eq!(stats[0].micro_postponed, 1);
     }
 
     #[test]
@@ -107,19 +121,19 @@ mod tests {
         assert!(result.is_ok());
 
         let stats = get_statistics(tauri::State::from(&state), 1);
-        assert_eq!(stats[0].rest_breaks_postponed, 1);
+        assert_eq!(stats[0].rest_postponed, 1);
     }
 
     #[test]
     fn test_multiple_breaks_same_day() {
         let state = create_test_state();
 
-        record_break_taken(tauri::State::from(&state), "micro".to_string()).unwrap();
-        record_break_taken(tauri::State::from(&state), "micro".to_string()).unwrap();
+        record_break_taken(tauri::State::from(&state), "micro".to_string(), true).unwrap();
+        record_break_taken(tauri::State::from(&state), "micro".to_string(), true).unwrap();
         record_break_postponed(tauri::State::from(&state), "rest".to_string()).unwrap();
 
         let stats = get_statistics(tauri::State::from(&state), 1);
-        assert_eq!(stats[0].microbreaks_taken, 2);
-        assert_eq!(stats[0].rest_breaks_postponed, 1);
+        assert_eq!(stats[0].micro_prompted_taken, 2);
+        assert_eq!(stats[0].rest_postponed, 1);
     }
 }
