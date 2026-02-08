@@ -1,4 +1,4 @@
-import { fireEvent, render, within } from "@testing-library/react";
+import { fireEvent, render, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "../setupTests";
 import { mockInvoke, setWindowLabel } from "../setupTests";
@@ -202,9 +202,10 @@ describe("BreakOverlay", () => {
     rerender(<BreakOverlay />);
 
     // Should have called completion
-    // We wait a tick because handleBreakComplete is async and called in useEffect
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(mockInvoke).toHaveBeenCalledWith("record_break_taken", { breakType: "micro" });
+    // We wait because handleBreakComplete is async and called in useEffect
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("record_break_taken", { breakType: "micro" });
+    });
 
     mockInvoke.mockClear();
 
@@ -212,7 +213,6 @@ describe("BreakOverlay", () => {
     rerender(<BreakOverlay />);
 
     // Should NOT call completion again (efficiency check)
-    await new Promise((resolve) => setTimeout(resolve, 10));
     expect(mockInvoke).not.toHaveBeenCalledWith("record_break_taken", expect.anything());
   });
 });

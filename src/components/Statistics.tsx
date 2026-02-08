@@ -95,6 +95,9 @@ export const Statistics: React.FC = () => {
   }, [date]);
 
   const handleDeleteHistory = async () => {
+    if (!window.confirm("Are you sure you want to delete all statistics? This action cannot be undone.")) {
+      return;
+    }
     try {
       await invoke("delete_statistics");
       await loadStats(date);

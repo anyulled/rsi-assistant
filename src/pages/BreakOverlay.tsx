@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { useTimer } from "@/hooks/useTimer";
 
@@ -55,9 +55,16 @@ export function BreakOverlay() {
   // Auto-complete break when duration is reached
   // This is now handled by watching the backend elapsed time
   const isBreakComplete = breakDuration > 0 && breakElapsed >= breakDuration;
+  const hasCompleted = useRef(false);
 
   useEffect(() => {
-    if (isBreakComplete && breakType) {
+    // Reset the guard when break is not complete
+    if (!isBreakComplete) {
+      hasCompleted.current = false;
+    }
+
+    if (isBreakComplete && breakType && !hasCompleted.current) {
+      hasCompleted.current = true;
       handleBreakComplete();
     }
   }, [isBreakComplete, breakType, handleBreakComplete]);
