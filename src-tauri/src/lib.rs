@@ -10,7 +10,8 @@ use crate::timer::{BreakConfig, TimerService};
 use chrono::Datelike;
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::image::Image;
+use tauri::menu::{IconMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Listener, Manager};
 use tokio::time::sleep;
@@ -81,13 +82,31 @@ pub fn run() {
 
             use tauri::menu::CheckMenuItem;
             use tauri_plugin_dialog::DialogExt;
-            // TODO: Use IconMenuItem once we have distinct icons. For now using standard MenuItem with placeholders where icons would be.
-            let show_i = MenuItem::with_id(app, "show", "Show RSI Assistant", true, None::<&str>)?;
-            let rest_break_i =
-                MenuItem::with_id(app, "rest_break", "Take Rest Break Now", true, None::<&str>)?;
-            let exercises_i = MenuItem::with_id(app, "exercises", "Exercises", true, None::<&str>)?;
+
+            macro_rules! create_icon_menu_item {
+                ($app:expr, $id:expr, $text:expr, $icon_path:literal) => {{
+                    let icon = Image::from_bytes(include_bytes!($icon_path))
+                        .expect(&format!("Failed to load icon: {}", $icon_path));
+                    IconMenuItem::with_id($app, $id, $text, true, Some(icon), None::<&str>)
+                }};
+            }
+
+            let show_i = create_icon_menu_item!(
+                app,
+                "show",
+                "Show RSI Assistant",
+                "../icons/menu_show.png"
+            )?;
+            let rest_break_i = create_icon_menu_item!(
+                app,
+                "rest_break",
+                "Take Rest Break Now",
+                "../icons/menu_rest.png"
+            )?;
+            let exercises_i =
+                create_icon_menu_item!(app, "exercises", "Exercises", "../icons/menu_exercises.png")?;
             let statistics_i =
-                MenuItem::with_id(app, "statistics", "Statistics", true, None::<&str>)?;
+                create_icon_menu_item!(app, "statistics", "Statistics", "../icons/menu_stats.png")?;
 
             // Start in Normal mode as the default behavior.
             let mode_normal_i =
@@ -286,6 +305,7 @@ pub fn run() {
 
                 let mut was_micro_overdue = false;
                 let mut was_rest_overdue = false;
+                let mut is_overlay_visible: Option<bool> = None;
 
                 loop {
                     sleep(Duration::from_secs(1)).await;
@@ -353,13 +373,16 @@ pub fn run() {
                         // Show overlay when a break is in progress
                         let should_show = status.break_type.is_some();
 
-                        if should_show {
-                            // Ensure it's visible and on top
-                            let _ = overlay.show();
-                            let _ = overlay.set_focus();
-                            let _ = overlay.set_always_on_top(true);
-                        } else {
-                            let _ = overlay.hide();
+                        if is_overlay_visible != Some(should_show) {
+                            if should_show {
+                                // Ensure it's visible and on top
+                                let _ = overlay.show();
+                                let _ = overlay.set_focus();
+                                let _ = overlay.set_always_on_top(true);
+                            } else {
+                                let _ = overlay.hide();
+                            }
+                            is_overlay_visible = Some(should_show);
                         }
                     }
                 }
@@ -372,6 +395,7 @@ pub fn run() {
             commands::update_settings,
             commands::get_settings,
             commands::get_statistics,
+            commands::delete_statistics,
             commands::record_break_taken,
             commands::record_break_postponed,
             commands::reset_break,

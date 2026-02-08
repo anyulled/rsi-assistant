@@ -30,19 +30,13 @@ function App() {
     }
 
     // Listen for system tray navigation events
-    let unlisten: () => void;
-
-    async function setupListener() {
-      unlisten = await listen<string>("navigate-to", (event) => {
-        const targetView = event.payload as "timer" | "settings" | "exercises" | "statistics";
-        setView(targetView);
-      });
-    }
-
-    setupListener();
+    const unlistenPromise = listen<string>("navigate-to", (event) => {
+      const targetView = event.payload as "timer" | "settings" | "exercises" | "statistics";
+      setView(targetView);
+    });
 
     return () => {
-      if (unlisten) unlisten();
+      unlistenPromise.then((unlisten) => unlisten());
     };
   }, []);
 

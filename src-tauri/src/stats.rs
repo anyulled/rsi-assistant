@@ -70,20 +70,39 @@ impl Default for DailyStats {
 #[serde(rename_all = "camelCase")]
 pub struct StatsStore {
     pub stats: HashMap<String, DailyStats>, // Key: date (YYYY-MM-DD)
+    #[serde(skip)]
+    pub last_seen_date: Option<chrono::NaiveDate>,
+    #[serde(skip)]
+    pub last_seen_date_str: String,
 }
 
 impl StatsStore {
     pub fn get_or_create_today(&mut self) -> &mut DailyStats {
-        let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+        let now = chrono::Local::now().date_naive();
+        if self.last_seen_date != Some(now) {
+            let today_str = now.format("%Y-%m-%d").to_string();
+            self.last_seen_date = Some(now);
+            self.last_seen_date_str = today_str;
+        }
+
+        let today = &self.last_seen_date_str;
+        if self.stats.contains_key(today) {
+            return self.stats.get_mut(today).unwrap();
+        }
+
         self.stats
             .entry(today.clone())
-            .or_insert_with(|| DailyStats { date: today, ..Default::default() })
+            .or_insert_with(|| DailyStats { date: today.clone(), ..Default::default() })
     }
 
     pub fn get_last_n_days(&self, n: usize) -> Vec<DailyStats> {
         let mut dates: Vec<_> = self.stats.keys().collect();
         dates.sort_by(|a, b| b.cmp(a)); // Sort descending (newest first)
         dates.into_iter().take(n).filter_map(|date| self.stats.get(date).cloned()).collect()
+    }
+
+    pub fn clear(&mut self) {
+        self.stats.clear();
     }
 }
 
@@ -153,6 +172,16 @@ mod tests {
 
         let last_5 = store.get_last_n_days(5);
         assert_eq!(last_5.len(), 5);
+    }
+
+    #[test]
+    fn test_stats_store_clear() {
+        let mut store = StatsStore::default();
+        store.get_or_create_today();
+        assert!(!store.stats.is_empty());
+
+        store.clear();
+        assert!(store.stats.is_empty());
     }
 
     #[test]

@@ -56,6 +56,17 @@ pub fn get_statistics(state: State<AppState>, days: usize) -> Vec<DailyStats> {
     get_statistics_impl(&store, days)
 }
 
+fn delete_statistics_impl(store: &mut StatsStore) {
+    store.clear();
+}
+
+#[tauri::command]
+pub fn delete_statistics(state: State<AppState>) -> Result<(), String> {
+    let mut store = state.stats_store.lock().map_err(|e| e.to_string())?;
+    delete_statistics_impl(&mut store);
+    Ok(())
+}
+
 fn record_break_taken_impl(store: &mut StatsStore, break_type: &str) -> Result<(), String> {
     let today = store.get_or_create_today();
 
@@ -197,6 +208,22 @@ mod tests {
 
         let stats = get_statistics_impl(&store, 1);
         assert_eq!(stats[0].micro_prompted_taken, 1);
+    }
+
+    #[test]
+    fn test_delete_statistics_logic() {
+        let mut store = crate::stats::StatsStore::default();
+        let today = store.get_or_create_today();
+        today.micro_prompted_taken += 1;
+
+        // Verify data exists
+        assert!(!get_statistics_impl(&store, 1).is_empty());
+
+        // Delete
+        delete_statistics_impl(&mut store);
+
+        // Verify empty
+        assert!(get_statistics_impl(&store, 1).is_empty());
     }
 
     #[test]

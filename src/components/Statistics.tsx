@@ -95,8 +95,12 @@ export const Statistics: React.FC = () => {
   }, [date]);
 
   const handleDeleteHistory = async () => {
-    // TODO: Implement delete command
-    console.warn("Delete history not implemented yet");
+    try {
+      await invoke("delete_statistics");
+      await loadStats(date);
+    } catch (error) {
+      console.error("Failed to delete statistics:", error);
+    }
   };
 
   return (
