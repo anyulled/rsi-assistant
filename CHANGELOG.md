@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0](https://github.com/anyulled/rsi-assistant/compare/rsi-assistant-v0.3.0...rsi-assistant-v0.4.0) (2026-02-08)
+
+
+### Features
+
+* implement delete statistics command ([c1d6186](https://github.com/anyulled/rsi-assistant/commit/c1d6186b5443c6e2f5173fdcd3b5d9ba9aa2829c))
+* Replace MenuItem with IconMenuItem and add icons ([6621983](https://github.com/anyulled/rsi-assistant/commit/6621983c6a3af1a3466f0770b561af74037d3108))
+* Use macro for IconMenuItem creation and proper error handling ([63ec2ef](https://github.com/anyulled/rsi-assistant/commit/63ec2ef4f199ddba6cfbde8f09438d632a1f1774))
+
 ## [0.3.0](https://github.com/anyulled/rsi-assistant/compare/rsi-assistant-v0.2.0...rsi-assistant-v0.3.0) (2025-12-30)
 
 
